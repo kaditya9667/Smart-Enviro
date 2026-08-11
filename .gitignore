@@ -7,3 +7,5 @@ obj/
 *.userosscache
 *.sln.docstates
 appsettings.Development.json
+*.json
+!appsettings.json
