@@ -1,0 +1,448 @@
+@page
+@model SmartEnviro.Pages.AlertsModel
+@{
+    Layout = "_Layout";
+}
+
+<main class="max-w-7xl mx-auto px-8 py-12 flex-grow w-full">
+    <header class="mb-12">
+        <h1 class="text-3xl font-semibold text-on-surface tracking-tight mb-2">Alerts &amp; Notifications</h1>
+        <p class="text-on-surface-variant">Manage your environmental monitoring thresholds and delivery preferences.</p>
+    </header>
+    
+    <!-- Main Bento Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Threshold Settings -->
+        <section class="lg:col-span-2 space-y-8">
+            <div class="neomorphic-raised bg-[#e8eaf0]/50 dark:bg-background p-8 rounded-xl">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="material-symbols-outlined text-primary">tune</span>
+                    <h2 class="text-xl font-semibold">Sensor Thresholds</h2>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- CO2 Setting -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium text-on-surface-variant">CO2 Levels</label>
+                            <span id="co2-value" class="text-primary font-semibold">1,000 ppm</span>
+                        </div>
+                        <input id="co2-range" type="range" min="400" max="2000" value="1000" step="50"
+                            class="w-full accent-primary" />
+                        <p class="text-xs text-secondary italic">Recommended for office air quality.</p>
+                    </div>
+                    <!-- Humidity Setting -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium text-on-surface-variant">Humidity Range (Max)</label>
+                            <span id="hum-value" class="text-primary font-semibold">65 %</span>
+                        </div>
+                        <input id="hum-range" type="range" min="20" max="100" value="65" step="1"
+                            class="w-full accent-primary" />
+                    </div>
+                    <!-- Temperature Setting -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium text-on-surface-variant">Temperature High</label>
+                            <span id="temp-value" class="text-primary font-semibold">32 °C</span>
+                        </div>
+                        <input id="temp-range" type="range" min="18" max="45" value="32" step="0.5"
+                            class="w-full accent-primary" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Historical Alerts Log -->
+            <div class="neomorphic-raised bg-[#e8eaf0]/50 dark:bg-background p-8 rounded-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary">history</span>
+                        <h2 class="text-xl font-semibold">Alert History</h2>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="neomorphic-inset bg-surface px-4 py-2 rounded-lg flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-secondary">filter_list</span>
+                            <select id="severity-filter"
+                                class="bg-transparent border-none text-sm text-on-surface-variant focus:ring-0 cursor-pointer p-0 pr-8">
+                                <option value="all">All Severities</option>
+                                <option value="danger">Critical</option>
+                                <option value="warning">Warning</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="good">Info</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="alert-history-container" class="space-y-4">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+                
+                <button id="clear-audit-log-btn"
+                    class="w-full mt-8 py-3 neomorphic-raised rounded-xl text-primary font-medium hover:scale-[1.01] transition-transform active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]">
+                    Clear Alert History
+                </button>
+            </div>
+        </section>
+        
+        <!-- Channel Settings & Summary Sidebar -->
+        <aside class="space-y-8">
+            <!-- Notification Channels -->
+            <div class="neomorphic-raised bg-[#e8eaf0]/50 dark:bg-background p-8 rounded-xl">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="material-symbols-outlined text-primary">notifications_active</span>
+                    <h2 class="text-xl font-semibold">Delivery</h2>
+                </div>
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 neomorphic-raised bg-surface rounded-lg flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">mail</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">Email</p>
+                                <p class="text-xs text-secondary">Daily summaries</p>
+                            </div>
+                        </div>
+                        <div id="toggle-email-alerts"
+                            class="delivery-toggle w-12 h-6 neomorphic-inset rounded-full relative cursor-pointer bg-primary transition-colors duration-300">
+                            <div class="knob absolute right-1 top-1 w-4 h-4 neomorphic-raised bg-white rounded-full transition-all duration-300">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 neomorphic-raised bg-surface rounded-lg flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">sms</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">SMS</p>
+                                <p class="text-xs text-secondary">Critical alerts only</p>
+                            </div>
+                        </div>
+                        <div id="toggle-sms-alerts"
+                            class="delivery-toggle w-12 h-6 neomorphic-inset rounded-full relative cursor-pointer bg-surface-variant transition-colors duration-300">
+                            <div class="knob absolute left-1 top-1 w-4 h-4 neomorphic-raised bg-white rounded-full transition-all duration-300">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 neomorphic-raised bg-surface rounded-lg flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">desktop_windows</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">Browser Alerts</p>
+                                <p class="text-xs text-secondary">Push notifications to OS</p>
+                            </div>
+                        </div>
+                        <div id="toggle-browser-alerts"
+                            class="w-12 h-6 neomorphic-inset rounded-full relative cursor-pointer bg-primary transition-colors duration-300">
+                            <div class="knob absolute right-1 top-1 w-4 h-4 neomorphic-raised bg-white rounded-full transition-all duration-300">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Stats / Health -->
+            <div class="neomorphic-raised bg-[#e8eaf0]/50 dark:bg-background p-8 rounded-xl relative overflow-hidden group">
+                <div class="relative z-10">
+                    <h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4">System Health</h3>
+                    <div class="text-4xl font-extrabold text-primary mb-2">98.2%</div>
+                    <p class="text-sm text-on-surface-variant">Alert resolution rate is <span class="text-green-600 font-bold">+2.4%</span> this week.</p>
+                    <div class="mt-6 flex gap-2">
+                        <div class="h-1 flex-1 neomorphic-inset rounded-full overflow-hidden">
+                            <div class="h-full w-full bg-primary"></div>
+                        </div>
+                        <div class="h-1 flex-1 neomorphic-inset rounded-full overflow-hidden">
+                            <div class="h-full w-3/4 bg-primary"></div>
+                        </div>
+                        <div class="h-1 flex-1 neomorphic-inset rounded-full overflow-hidden">
+                            <div class="h-full w-1/2 bg-surface-container"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                    <span class="material-symbols-outlined text-9xl">insights</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        let browserAlertsEnabled = localStorage.getItem('smartenviro_notifications') !== 'disabled';
+        let emailAlertsEnabled = localStorage.getItem('smartenviro_email_alerts') !== 'disabled';
+        let smsAlertsEnabled = localStorage.getItem('smartenviro_sms_alerts') === 'enabled';
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            // Setup browser alerts toggle
+            const browserToggle = document.getElementById('toggle-browser-alerts');
+            if (browserToggle) {
+                const knob = browserToggle.querySelector('.knob');
+                if (!browserAlertsEnabled) {
+                    browserToggle.classList.replace('bg-primary', 'bg-surface-variant');
+                    knob.classList.replace('right-1', 'left-1');
+                }
+                browserToggle.addEventListener('click', () => {
+                    browserAlertsEnabled = !browserAlertsEnabled;
+                    localStorage.setItem('smartenviro_notifications', browserAlertsEnabled ? 'enabled' : 'disabled');
+                    browserToggle.classList.toggle('bg-primary');
+                    browserToggle.classList.toggle('bg-surface-variant');
+                    knob.classList.toggle('left-1');
+                    knob.classList.toggle('right-1');
+                    if (browserAlertsEnabled && 'Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission();
+                    }
+                });
+            }
+
+            // Setup email alerts toggle
+            const emailToggle = document.getElementById('toggle-email-alerts');
+            if (emailToggle) {
+                const knob = emailToggle.querySelector('.knob');
+                if (!emailAlertsEnabled) {
+                    emailToggle.classList.replace('bg-primary', 'bg-surface-variant');
+                    knob.classList.replace('right-1', 'left-1');
+                }
+                emailToggle.addEventListener('click', () => {
+                    emailAlertsEnabled = !emailAlertsEnabled;
+                    localStorage.setItem('smartenviro_email_alerts', emailAlertsEnabled ? 'enabled' : 'disabled');
+                    emailToggle.classList.toggle('bg-primary');
+                    emailToggle.classList.toggle('bg-surface-variant');
+                    knob.classList.toggle('left-1');
+                    knob.classList.toggle('right-1');
+                });
+            }
+
+            // Setup sms alerts toggle
+            const smsToggle = document.getElementById('toggle-sms-alerts');
+            if (smsToggle) {
+                const knob = smsToggle.querySelector('.knob');
+                if (smsAlertsEnabled) {
+                    smsToggle.classList.replace('bg-surface-variant', 'bg-primary');
+                    knob.classList.replace('left-1', 'right-1');
+                }
+                smsToggle.addEventListener('click', () => {
+                    smsAlertsEnabled = !smsAlertsEnabled;
+                    localStorage.setItem('smartenviro_sms_alerts', smsAlertsEnabled ? 'enabled' : 'disabled');
+                    smsToggle.classList.toggle('bg-primary');
+                    smsToggle.classList.toggle('bg-surface-variant');
+                    knob.classList.toggle('left-1');
+                    knob.classList.toggle('right-1');
+                });
+            }
+
+            // Bind slider threshold updates
+            bindThresholdSlider('co2-range', 'co2-value', ' ppm', 'CO2');
+            bindThresholdSlider('hum-range', 'hum-value', ' %', 'Humidity');
+            bindThresholdSlider('temp-range', 'temp-value', ' °C', 'Temperature');
+            
+            // Initial load of history
+            loadAlertHistory();
+
+            // Filter dropdown change
+            document.getElementById('severity-filter').addEventListener('change', loadAlertHistory);
+
+            // Clear history button
+            document.getElementById('clear-audit-log-btn').addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear your alert history?')) {
+                    localStorage.removeItem('smartenviro_alert_history');
+                    loadAlertHistory();
+                }
+            });
+        });
+
+        function bindThresholdSlider(rangeId, labelId, unit, name) {
+            const range = document.getElementById(rangeId);
+            const label = document.getElementById(labelId);
+            if (!range || !label) return;
+            
+            const storageKey = 'smartenviro_threshold_' + name.toLowerCase();
+            const saved = localStorage.getItem(storageKey);
+            if (saved) range.value = saved;
+
+            const updateLabel = () => {
+                label.innerText = range.value + unit;
+            };
+            range.addEventListener('input', updateLabel);
+            range.addEventListener('change', () => {
+                localStorage.setItem(storageKey, range.value);
+            });
+            updateLabel();
+        }
+
+        function loadAlertHistory() {
+            let alertHistory = [];
+            try {
+                const saved = localStorage.getItem('smartenviro_alert_history');
+                if (saved) {
+                    alertHistory = JSON.parse(saved);
+                }
+            } catch(e) { console.error('Error loading alert history', e); }
+
+            const filterVal = document.getElementById('severity-filter').value;
+            const container = document.querySelector('#alert-history-container');
+            
+            // Filter history if needed
+            let filteredHistory = alertHistory;
+            if (filterVal !== 'all') {
+                filteredHistory = alertHistory.filter(a => a.level === filterVal);
+            }
+
+            if (filteredHistory.length === 0) {
+                container.innerHTML = '<p class="text-center text-on-surface-variant py-8">No alerts in history yet.</p>';
+                return;
+            }
+
+            let html = '';
+            filteredHistory.slice(-15).reverse().forEach(alert => { // Show last 15, most recent first
+                let colorClass, bgClass, icon;
+                if (alert.level === 'danger') { colorClass = 'bg-error-container text-error'; bgClass = 'bg-error/10'; icon = 'warning'; }
+                else if (alert.level === 'warning') { colorClass = 'bg-amber-500/20 text-amber-500'; bgClass = 'bg-amber-500/10'; icon = 'error_outline'; }
+                else if (alert.level === 'moderate') { colorClass = 'bg-indigo-500/20 text-indigo-500'; bgClass = 'bg-indigo-500/10'; icon = 'cloud'; }
+                else { colorClass = 'bg-emerald-500/20 text-emerald-500'; bgClass = 'bg-emerald-500/10'; icon = 'eco'; }
+
+                const timeAgo = getTimeAgo(new Date(alert.timestamp));
+                html += '<div class="flex items-center p-4 neomorphic-inset rounded-xl bg-surface-container-low">' +
+                    '<div class="w-10 h-10 rounded-lg ' + colorClass + ' flex items-center justify-center mr-4 shrink-0">' +
+                        '<span class="material-symbols-outlined">' + icon + '</span>' +
+                    '</div>' +
+                    '<div class="flex-grow min-w-0">' +
+                        '<div class="flex justify-between items-start gap-4">' +
+                            '<h4 class="font-semibold text-on-surface capitalize truncate">' + alert.city + ' - ' + alert.level + '</h4>' +
+                            '<span class="text-xs text-secondary shrink-0">' + timeAgo + '</span>' +
+                        '</div>' +
+                        '<p class="text-sm text-on-surface-variant truncate">' + alert.msg + ' ' + (alert.aqi ? '(Value: ' + alert.aqi + ')' : '') + '</p>' +
+                    '</div>' +
+                    '<div class="ml-4 px-3 py-1 bg-surface-container-highest text-secondary text-[10px] font-bold uppercase rounded-full tracking-wider shrink-0">Resolved</div>' +
+                '</div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            if (isNaN(diff)) return 'Some time ago';
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return minutes + ' mins ago';
+            if (hours < 24) return hours + ' hours ago';
+            return days + ' days ago';
+        }
+
+        // Listen for storage events to reload history if generated on dashboard
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'smartenviro_alert_history') {
+                loadAlertHistory();
+            }
+        });
+
+        // SignalR Connection Setup
+        let hubConnection = null;
+
+        function startSignalR() {
+            hubConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/sensorHub")
+                .withAutomaticReconnect()
+                .build();
+
+            hubConnection.on("ReceiveSensorUpdate", (data) => {
+                evaluateRealTimeAlert(data);
+            });
+
+            hubConnection.start()
+                .then(() => {
+                    console.log("Alerts SignalR Connected.");
+                    registerCitiesWithHub();
+                })
+                .catch(err => console.error("Alerts SignalR Connection Error: ", err));
+        }
+
+        function registerCitiesWithHub() {
+            if (hubConnection && hubConnection.state === signalR.HubConnectionState.Connected) {
+                let cities = [];
+                try {
+                    const saved = localStorage.getItem('smartenviro_cities');
+                    if (saved) cities = JSON.parse(saved);
+                } catch(e) {}
+                const list = cities.map(c => ({
+                    city: c.city,
+                    token: c.token || '2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a',
+                    displayName: c.displayName,
+                    endpoint: c.endpoint,
+                    type: c.type || 'waqi'
+                }));
+                hubConnection.invoke("RegisterCities", list).catch(err => console.error(err));
+            }
+        }
+
+        function evaluateRealTimeAlert(data) {
+            let alerts = [];
+            let alertName = data.displayName || data.city;
+            
+            if (data.lastAqi !== null && data.lastAqi !== undefined) {
+                const aqi = parseInt(data.lastAqi);
+                if (aqi > 150) {
+                    alerts.push({ city: alertName, type: 'AQI', level: 'danger', aqi: aqi, msg: 'Unhealthy air quality detected! Limit outdoor exertion.' });
+                } else if (aqi > 100) {
+                    alerts.push({ city: alertName, type: 'AQI', level: 'warning', aqi: aqi, msg: 'Unhealthy for sensitive groups. Wear a mask.' });
+                } else if (aqi > 50) {
+                    alerts.push({ city: alertName, type: 'AQI', level: 'moderate', aqi: aqi, msg: 'Moderate air quality. Acceptable conditions.' });
+                } else {
+                    alerts.push({ city: alertName, type: 'AQI', level: 'good', aqi: aqi, msg: 'Excellent air quality. Great day to be outside!' });
+                }
+            }
+
+            const tempThreshold = localStorage.getItem('smartenviro_threshold_temperature') || 32;
+            if (data.temp !== null && data.temp !== undefined && data.temp >= Number(tempThreshold)) {
+                alerts.push({ city: alertName, type: 'Temperature', level: 'danger', aqi: data.temp + '°C', msg: `Temperature high: ${data.temp}°C >= ${tempThreshold}°C` });
+            }
+            
+            const humThreshold = localStorage.getItem('smartenviro_threshold_humidity') || 65;
+            if (data.hum !== null && data.hum !== undefined && data.hum >= Number(humThreshold)) {
+                alerts.push({ city: alertName, type: 'Humidity', level: 'warning', aqi: data.hum + '%', msg: `Humidity high: ${data.hum}% >= ${humThreshold}%` });
+            }
+
+            if (alerts.length > 0) {
+                let alertHistory = [];
+                try {
+                    const savedHistory = localStorage.getItem('smartenviro_alert_history');
+                    if (savedHistory) alertHistory = JSON.parse(savedHistory);
+                } catch(e) {}
+
+                const now = new Date().toISOString();
+                let changed = false;
+                alerts.forEach(alert => {
+                    const lastEntryForType = [...alertHistory].reverse().find(a => a.city === alert.city && a.type === alert.type);
+                    if (!lastEntryForType || lastEntryForType.level !== alert.level || lastEntryForType.msg !== alert.msg) {
+                        alertHistory.push({ ...alert, timestamp: now });
+                        if (alertHistory.length > 50) {
+                            alertHistory.shift();
+                        }
+                        changed = true;
+
+                        // Browser Notification
+                        if (browserAlertsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                            if (alert.level === 'danger' || alert.level === 'warning') {
+                                new Notification('SmartEnviro Alert: ' + alert.city, { body: alert.msg });
+                            }
+                        }
+                    }
+                });
+
+                if (changed) {
+                    localStorage.setItem('smartenviro_alert_history', JSON.stringify(alertHistory));
+                    loadAlertHistory();
+                }
+            }
+        }
+
+        // Start SignalR on load
+        window.addEventListener('load', startSignalR);
+    </script>
+}

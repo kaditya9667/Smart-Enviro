@@ -1,0 +1,803 @@
+@page
+@model SmartEnviro.Pages.DashboardModel
+@{
+    Layout = "_Layout";
+}
+
+@section HeaderActions {
+    <div class="neomorphic-inset bg-surface px-4 py-2 rounded-full flex items-center gap-2 flex-grow max-w-full">
+        <span class="material-symbols-outlined text-outline text-lg">search</span>
+        <input id="sensor-search" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full md:w-48" placeholder="Search sensors..." type="text"/>
+    </div>
+}
+
+<main class="flex-grow p-8 max-w-[1600px] mx-auto w-full relative z-10">
+    <!-- 3D Spline Scene Background -->
+    <div class="fixed inset-0 pointer-events-none z-[-1] opacity-30 overflow-hidden spline-crop-container">
+        <spline-viewer id="dashboard-spline" url="https://prod.spline.design/waDdfpGiphbZsFsC/scene.splinecode" class="w-full h-full block pointer-events-none"></spline-viewer>
+    </div>
+    <!-- Dashboard Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-on-surface flex items-center gap-3">
+                Environmental Overview
+            </h1>
+            <p class="text-on-surface-variant text-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px]">settings_input_antenna</span>
+                <span id="hardware-status">No hardware attached</span>
+                <span class="text-xs text-outline">Last updated: <span id="last-updated">--</span></span>
+            </p>
+        </div>
+        <div class="neomorphic-inset bg-surface px-4 py-2 rounded-full flex items-center gap-2 w-full md:w-64">
+            <span class="material-symbols-outlined text-outline text-lg">sensors</span>
+            <input id="hw-sensor-search" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="Search sensors..." type="text"/>
+        </div>
+    </div>
+    
+    <!-- Bento Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Summary Stats & Weather Grid (Top Row / Left Column) -->
+        <div class="lg:col-span-3 flex flex-col gap-6">
+            <!-- Core Environmental Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card: AQI -->
+                <div class="neomorphic-raised bg-surface dark:bg-background p-6 rounded-xl flex flex-col gap-4">
+                    <div class="flex justify-between items-start">
+                        <span class="neomorphic-inset p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-primary">air</span>
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-sm font-medium">Air Quality Index</p>
+                        <h3 class="text-3xl font-semibold text-on-surface"><span id="stat-aqi">--</span></h3>
+                    </div>
+                </div>
+                <!-- Card: Temperature -->
+                <div class="neomorphic-raised bg-surface dark:bg-background p-6 rounded-xl flex flex-col gap-4">
+                    <div class="flex justify-between items-start">
+                        <span class="neomorphic-inset p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-primary">thermostat</span>
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-sm font-medium">Temperature</p>
+                        <h3 class="text-3xl font-semibold text-on-surface"><span id="stat-temp">--</span> <span class="text-sm font-normal text-outline temp-unit">°C</span></h3>
+                    </div>
+                </div>
+                <!-- Card: Humidity -->
+                <div class="neomorphic-raised bg-surface dark:bg-background p-6 rounded-xl flex flex-col gap-4">
+                    <div class="flex justify-between items-start">
+                        <span class="neomorphic-inset p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-primary">water_drop</span>
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-sm font-medium">Humidity</p>
+                        <h3 class="text-3xl font-semibold text-on-surface"><span id="stat-hum">--</span><span class="text-sm font-normal text-outline">%</span></h3>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+        
+        <!-- Central Data Visualisation (Large Chart) -->
+        <div class="lg:col-span-3 neomorphic-raised bg-surface dark:bg-background p-8 rounded-xl h-[400px] flex flex-col relative overflow-hidden">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-on-surface">Air Quality Trends</h3>
+                    <p class="text-xs text-on-surface-variant">Last 24 hours monitoring</p>
+                </div>
+                <div class="flex gap-2 z-10">
+                    <button id="chart-btn-day" class="neomorphic-inset bg-surface text-xs font-semibold text-primary px-3 py-1.5 rounded-full transition-transform">Day</button>
+                    <button id="chart-btn-week" class="neomorphic-raised bg-surface text-xs font-medium text-on-surface-variant px-3 py-1.5 rounded-full hover:scale-105 transition-transform">Week</button>
+                </div>
+            </div>
+            <!-- Simulated Chart -->
+            <div class="flex-grow flex items-end gap-2 pb-4">
+                <div id="chart-bars-inner" class="flex-grow h-full flex items-end gap-4 px-4">
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all duration-500 hover:bg-primary/40" style="height: 40%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 55%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 45%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 70%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 60%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 85%"></div>
+                    <div class="flex-1 bg-primary rounded-t-lg transition-all" style="height: 95%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 75%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 65%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 50%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 40%"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style="height: 30%"></div>
+                </div>
+            </div>
+            <!-- Horizontal Axis -->
+            <div id="chart-xaxis" class="flex justify-between px-8 text-[10px] text-outline font-medium">
+                <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>23:59</span>
+            </div>
+        </div>
+        
+        <!-- Recent Alerts Sidebar -->
+        <div class="lg:col-span-1 lg:row-span-2 flex flex-col gap-6">
+            <div class="neomorphic-raised bg-surface dark:bg-background p-6 rounded-xl h-full flex flex-col max-h-[600px]">
+                <div class="flex items-center justify-between mb-6 shrink-0">
+                    <h3 class="text-lg font-semibold text-on-surface">Live Alerts</h3>
+                    <span class="neomorphic-inset w-6 h-6 flex items-center justify-center rounded-full">
+                        <span id="alerts-badge-count" class="text-[10px] font-bold text-outline">0</span>
+                    </span>
+                </div>
+                <div id="alerts-list-container" class="space-y-4 overflow-y-auto pr-2 flex-grow flex flex-col">
+                    <!-- Empty State -->
+                    <div class="text-on-surface-variant flex flex-col items-center gap-2 m-auto text-center mt-10">
+                        <span class="material-symbols-outlined text-4xl text-outline mb-2">notifications_off</span>
+                        <p class="text-sm font-semibold">No active alerts</p>
+                        <p class="text-xs text-outline px-4">Connect a city to monitor its air quality for real-time alerts.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Sensors List -->
+        <div class="lg:col-span-3 neomorphic-raised bg-surface dark:bg-background p-8 rounded-xl">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-lg font-semibold text-on-surface">Active Sensors</h3>
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span class="text-xs text-on-surface-variant">Active (<span id="active-count">0</span>)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                        <span class="text-xs text-on-surface-variant">Offline (<span id="offline-count">0</span>)</span>
+                    </div>
+                </div>
+            </div>
+            <div id="sensors-list-container" class="w-full">
+                <!-- Dynamically loaded -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Deploy Sensor Modal -->
+    <div id="hardware-model" class="hidden font-['Plus_Jakarta_Sans'] fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-[#0f1322]/40 backdrop-blur-sm" onclick="document.getElementById('hardware-model').classList.add('hidden')"></div>
+        <div class="relative w-full max-w-sm bg-surface neomorphic-raised rounded-2xl p-6 flex flex-col gap-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-on-surface">Add Sensor Source</h3>
+                <button onclick="document.getElementById('hardware-model').classList.add('hidden')" class="text-on-surface-variant hover:text-error transition-colors"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            
+            <!-- Sensor Type Selector -->
+            <div class="flex gap-2">
+                <button id="sensor-type-waqi" class="flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-primary text-white">WAQI API</button>
+                <button id="sensor-type-local" class="flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-surface-container text-on-surface-variant hover:bg-surface-container-high">Local Hardware</button>
+            </div>
+
+            <!-- WAQI Section -->
+            <div id="waqi-section" class="flex flex-col gap-4">
+                <p class="text-sm font-medium text-on-surface-variant">Enter a city, exact station ID (@@uid), or coordinates.</p>
+                <div class="neomorphic-inset bg-surface px-4 py-2 rounded-xl flex items-center gap-2 relative">
+                    <span class="material-symbols-outlined text-outline">location_city</span>
+                    <input id="waqi-city" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full pr-8" placeholder="e.g. London, @@8166, or geo:40;-74" type="text"/>
+                    <button id="waqi-locate-btn" class="absolute right-3 text-primary hover:text-indigo-400 transition-colors flex items-center justify-center p-1.5 rounded-full hover:bg-surface-variant" title="Use My Location">
+                        <span class="material-symbols-outlined text-[18px]">my_location</span>
+                    </button>
+                </div>
+                <div class="neomorphic-inset bg-surface px-4 py-2 rounded-xl flex items-center gap-2">
+                    <span class="material-symbols-outlined text-outline">key</span>
+                    <input id="waqi-token" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="Your WAQI Token" type="text" value="2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a"/>
+                </div>
+                <p class="text-[10px] text-outline">Get a free token at <a href="https://aqicn.org/data-platform/token/" target="_blank" class="text-primary hover:underline">aqicn.org</a>.</p>
+                <button id="waqi-connect-btn" class="w-full py-3 neomorphic-raised bg-primary text-white rounded-lg text-sm font-bold transition-transform hover:scale-[1.02] active:scale-95">Connect WAQI Source</button>
+            </div>
+
+            <!-- Local Hardware Section (Hidden by default) -->
+            <div id="local-section" class="hidden flex flex-col gap-4">
+                <p class="text-sm font-medium text-on-surface-variant">Connect to a local sensor API endpoint.</p>
+                <div class="neomorphic-inset bg-surface px-4 py-2 rounded-xl flex items-center gap-2">
+                    <span class="material-symbols-outlined text-outline">label</span>
+                    <input id="local-name" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="e.g. Living Room, Lab Sensor 1" type="text"/>
+                </div>
+                <div class="neomorphic-inset bg-surface px-4 py-2 rounded-xl flex items-center gap-2">
+                    <span class="material-symbols-outlined text-outline">link</span>
+                    <input id="local-endpoint" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="http://192.168.1.100:8080/api/data" type="text"/>
+                </div>
+                <p class="text-[10px] text-outline">Endpoint must return JSON with: { aqi, temp, hum }</p>
+                <button id="local-connect-btn" class="w-full py-3 neomorphic-raised bg-primary text-white rounded-lg text-sm font-bold transition-transform hover:scale-[1.02] active:scale-95">Connect Local Sensor</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        // Modal toggling
+        const hwModel = document.getElementById('hardware-model');
+        const typeWaqi = document.getElementById('sensor-type-waqi');
+        const typeLocal = document.getElementById('sensor-type-local');
+        const waqiSection = document.getElementById('waqi-section');
+        const localSection = document.getElementById('local-section');
+
+        typeWaqi.addEventListener('click', () => {
+            typeWaqi.className = "flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-primary text-white";
+            typeLocal.className = "flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-surface-container text-on-surface-variant hover:bg-surface-container-high";
+            waqiSection.classList.remove('hidden');
+            localSection.classList.add('hidden');
+        });
+
+        typeLocal.addEventListener('click', () => {
+            typeLocal.className = "flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-primary text-white";
+            typeWaqi.className = "flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-surface-container text-on-surface-variant hover:bg-surface-container-high";
+            localSection.classList.remove('hidden');
+            waqiSection.classList.add('hidden');
+        });
+
+        // Search inputs filtering
+        document.getElementById('sensor-search').addEventListener('input', filterSensors);
+        document.getElementById('hw-sensor-search').addEventListener('input', filterSensors);
+
+        function filterSensors(e) {
+            const term = e.target.value.toLowerCase();
+            const cards = document.getElementById('sensors-list-container')?.querySelectorAll('.sensor-item-card');
+            if (cards) {
+                cards.forEach(card => {
+                    if (card.innerText.toLowerCase().includes(term)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Chart Day/Week controls
+        let currentChartMode = 'day';
+        const btnDay = document.getElementById('chart-btn-day');
+        const btnWeek = document.getElementById('chart-btn-week');
+        const chartBars = document.getElementById('chart-bars-inner');
+        const chartXaxis = document.getElementById('chart-xaxis');
+
+        const dayAxis = '<span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>Now</span>';
+        const weekAxis = '<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>';
+
+        btnDay.addEventListener('click', () => {
+            currentChartMode = 'day';
+            btnDay.className = "neomorphic-inset bg-surface text-xs font-semibold text-primary px-3 py-1.5 rounded-full transition-transform";
+            btnWeek.className = "neomorphic-raised bg-surface text-xs font-medium text-on-surface-variant px-3 py-1.5 rounded-full hover:scale-105 transition-transform";
+            chartXaxis.innerHTML = dayAxis;
+            renderChart();
+        });
+
+        btnWeek.addEventListener('click', () => {
+            currentChartMode = 'week';
+            btnWeek.className = "neomorphic-inset bg-surface text-xs font-semibold text-primary px-3 py-1.5 rounded-full transition-transform";
+            btnDay.className = "neomorphic-raised bg-surface text-xs font-medium text-on-surface-variant px-3 py-1.5 rounded-full hover:scale-105 transition-transform";
+            chartXaxis.innerHTML = weekAxis;
+            renderChart();
+        });
+
+        function renderChart() {
+            if (activeCities.length === 0 || !activeCities[selectedCityIndex]) return;
+            const cityObj = activeCities[selectedCityIndex];
+            if (!cityObj.dayHistory || !cityObj.weekHistory) return;
+
+            let dataToRender = currentChartMode === 'day' ? cityObj.dayHistory : cityObj.weekHistory;
+            let maxVal = Math.max(...dataToRender, 50); // Scale reference
+            
+            let html = '';
+            dataToRender.forEach((val, i) => {
+                let percent = Math.min(100, Math.max(5, (val / maxVal) * 100));
+                let isLast = i === dataToRender.length - 1;
+                let colorClass = isLast ? 'bg-primary' : 'bg-primary/20 hover:bg-primary/40';
+                html += '<div class="flex-1 ' + colorClass + ' rounded-t-lg transition-all duration-500 relative group" style="height: ' + percent + '%">' +
+                    '<div class="opacity-0 group-hover:opacity-100 w-max absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs font-bold bg-surface px-2 py-1 rounded shadow text-on-surface z-10 transition-opacity pointer-events-none">' + Math.round(val) + ' AQI</div>' +
+                '</div>';
+            });
+            chartBars.innerHTML = html;
+        }
+
+        // Active cities lists and configurations
+        let activeCities = [];
+        try {
+            const saved = localStorage.getItem('smartenviro_cities');
+            if (saved) {
+                activeCities = JSON.parse(saved);
+                activeCities.forEach(c => { 
+                    c.status = 'ok'; 
+                    c.lastAqi = '--'; 
+                    delete c.dayHistory; 
+                    delete c.weekHistory; 
+                });
+            }
+        } catch(e) { console.error('Error loading cities', e); }
+
+        // Preload based on location if empty
+        if (activeCities.length === 0) {
+            activeCities.push({ city: 'here', token: '2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a', status: 'ok', lastAqi: '--' });
+            localStorage.setItem('smartenviro_cities', JSON.stringify(activeCities.map(c => ({ city: c.city, token: c.token, displayName: c.displayName }))));
+        }
+
+        let selectedCityIndex = 0;
+
+        function updateActiveSensorsList() {
+            const container = document.getElementById('sensors-list-container');
+            
+            let activeCount = activeCities.filter(c => c.status === 'ok').length;
+            let offlineCount = activeCities.filter(c => c.status !== 'ok').length;
+            document.getElementById('active-count').innerText = activeCount;
+            document.getElementById('offline-count').innerText = offlineCount;
+            
+            if (activeCities.length === 0) {
+                container.innerHTML = `<div class="text-center py-10">
+                    <span class="material-symbols-outlined text-4xl text-outline mb-4">public</span>
+                    <p class="text-sm font-semibold text-on-surface-variant mb-2">No city connected</p>
+                    <p class="text-xs text-outline max-w-sm mx-auto mb-6">Connect a city to stream real-time environmental data.</p>
+                    <button onclick="document.getElementById('hardware-model').classList.remove('hidden')" class="neomorphic-raised bg-surface text-primary font-semibold px-6 py-2 rounded-full hover:scale-105 active:scale-95 transition-transform text-sm">Add City Data</button>
+                </div>`;
+            } else {
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">';
+                activeCities.forEach((cityObj, idx) => {
+                     const isSelected = idx === selectedCityIndex;
+                     const ringClass = isSelected ? 'ring-2 ring-primary border-transparent' : 'border border-transparent hover:border-primary/50';
+                     const statusColor = cityObj.status === "ok" ? "bg-emerald-500 animate-pulse" : "bg-rose-500";
+                     const name = cityObj.displayName || (cityObj.city.startsWith('geo:') ? 'Pinpoint Location' : 
+                                  cityObj.city.startsWith('@@') ? 'Station ' + cityObj.city.substring(1) : 
+                                  cityObj.city === 'here' ? 'My Location' : cityObj.city);
+                                  
+                     html += '<div class="sensor-item-card neomorphic-inset bg-surface-container-low p-4 rounded-xl flex flex-col gap-2 relative cursor-pointer transition-all ' + ringClass + '" onclick="selectCity(' + idx + ')">' +
+                        '<div class="flex justify-between items-center">' +
+                            '<span class="font-semibold text-sm text-on-surface capitalize truncate max-w-[120px]" title="' + name + '">' + 
+                                name + 
+                            '</span>' +
+                            '<div class="flex items-center gap-2">' +
+                                '<div class="w-2 h-2 rounded-full ' + statusColor + '"></div>' +
+                                '<span onclick="event.stopPropagation(); removeCity(' + idx + ');" class="material-symbols-outlined text-[16px] text-outline hover:text-error transition-colors" title="Remove City">close</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<span class="text-[11px] text-on-surface-variant font-mono">AQI: ' + cityObj.lastAqi + '</span>' +
+                     '</div>';
+                });
+                html += '<div class="min-h-[80px] neomorphic-raised bg-surface dark:bg-background text-on-surface-variant rounded-xl flex flex-col gap-2 items-center justify-center border border-transparent hover:border-primary/50 cursor-pointer transition-all active:neomorphic-inset" onclick="document.getElementById(\'hardware-model\').classList.remove(\'hidden\')">' +
+                     '<span class="material-symbols-outlined">add_circle</span>' +
+                     '<span class="text-xs font-semibold">Deploy New</span>' +
+                '</div></div>';
+                container.innerHTML = html;
+                
+                if (activeCities[selectedCityIndex]) {
+                    const cityName = activeCities[selectedCityIndex].displayName || activeCities[selectedCityIndex].city;
+                    document.getElementById('hardware-status').innerText = 'Currently displaying: ' + cityName.charAt(0).toUpperCase() + cityName.slice(1);
+                }
+            }
+        }
+
+        function selectCity(idx) {
+            if (activeCities[idx]) {
+                selectedCityIndex = idx;
+                updateActiveSensorsList();
+                updateMainStatsFromCity(activeCities[idx]);
+            }
+        }
+
+        function removeCity(idx) {
+            activeCities.splice(idx, 1);
+            if (selectedCityIndex >= activeCities.length && activeCities.length > 0) {
+                selectedCityIndex = activeCities.length - 1;
+            } else if (activeCities.length === 0) {
+                selectedCityIndex = 0;
+                document.getElementById('stat-aqi').innerText = '--';
+                document.getElementById('stat-temp').innerText = '--';
+                document.getElementById('stat-hum').innerText = '--';
+                document.getElementById('chart-bars-inner').innerHTML = '';
+                realTimeAlerts = [];
+            }
+            
+            localStorage.setItem('smartenviro_cities', JSON.stringify(activeCities.map(c => ({ city: c.city, token: c.token, displayName: c.displayName, endpoint: c.endpoint, type: c.type }))));
+            updateActiveSensorsList();
+            if (activeCities.length > 0) {
+                updateMainStatsFromCity(activeCities[selectedCityIndex]);
+            } else {
+                generateAlerts(); 
+            }
+            if (typeof registerCitiesWithHub === 'function') {
+                registerCitiesWithHub();
+            }
+        }
+
+        function formatValue(value, decimals = 1) {
+            if (value === undefined || value === null || value === '--') return '--';
+            const num = Number(value);
+            return Number.isFinite(num) ? num.toFixed(decimals) : '--';
+        }
+
+        function updateMainStatsFromCity(cityObj) {
+            document.getElementById('stat-aqi').innerText = cityObj.lastAqi !== undefined ? cityObj.lastAqi : '--';
+            
+            // Handle unit conversion for temperature
+            const useMetric = localStorage.getItem('smartenviro_metric_units') !== 'disabled';
+            const tempVal = cityObj.temp;
+            if (tempVal !== undefined && tempVal !== null && tempVal !== '--') {
+                if (useMetric) {
+                    document.getElementById('stat-temp').innerText = formatValue(tempVal, 1);
+                    document.querySelectorAll('.temp-unit').forEach(el => el.innerText = '°C');
+                } else {
+                    const fahrenheit = (tempVal * 9/5) + 32;
+                    document.getElementById('stat-temp').innerText = formatValue(fahrenheit, 1);
+                    document.querySelectorAll('.temp-unit').forEach(el => el.innerText = '°F');
+                }
+            } else {
+                document.getElementById('stat-temp').innerText = '--';
+            }
+            
+            document.getElementById('stat-hum').innerText = formatValue(cityObj.hum, 0);
+
+            renderChart();
+        }
+
+        // Locate Me inside deploy model
+        document.getElementById('waqi-locate-btn')?.addEventListener('click', function() {
+            const input = document.getElementById('waqi-city');
+            input.value = '';
+            input.placeholder = 'Fetching exact location...';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude.toFixed(4);
+                        const lng = position.coords.longitude.toFixed(4);
+                        input.value = `geo:${lat};${lng}`;
+                    },
+                    (error) => {
+                        console.error("Location error:", error);
+                        input.value = 'here';
+                    }
+                );
+            } else {
+                input.value = 'here';
+            }
+        });
+
+        // Add WAQI sensor source
+        document.getElementById('waqi-connect-btn').addEventListener('click', function() {
+            const city = document.getElementById('waqi-city').value.trim();
+            const token = document.getElementById('waqi-token').value.trim() || '2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a';
+            if (city) {
+                if (!activeCities.find(c => c.city.toLowerCase() === city.toLowerCase())) {
+                    activeCities.push({ city, token, status: 'ok', lastAqi: '--' });
+                    selectedCityIndex = activeCities.length - 1; // Auto-select new
+                    localStorage.setItem('smartenviro_cities', JSON.stringify(activeCities.map(c => ({ city: c.city, token: c.token, displayName: c.displayName }))));
+                    updateActiveSensorsList();
+                    pollHardwareData();
+                    if (typeof registerCitiesWithHub === 'function') registerCitiesWithHub();
+                }
+                document.getElementById('hardware-model').classList.add('hidden');
+                document.getElementById('waqi-city').value = '';
+            }
+        });
+
+        // Add local hardware source
+        document.getElementById('local-connect-btn').addEventListener('click', function() {
+            const name = document.getElementById('local-name').value.trim();
+            const endpoint = document.getElementById('local-endpoint').value.trim();
+            if (name && endpoint) {
+                if (!activeCities.find(c => c.endpoint && c.endpoint.toLowerCase() === endpoint.toLowerCase())) {
+                    activeCities.push({ 
+                        city: name, 
+                        endpoint: endpoint, 
+                        type: 'local', 
+                        status: 'ok', 
+                        lastAqi: '--',
+                        displayName: name 
+                    });
+                    selectedCityIndex = activeCities.length - 1;
+                    localStorage.setItem('smartenviro_cities', JSON.stringify(activeCities.map(c => ({ 
+                        city: c.city, 
+                        token: c.token, 
+                        displayName: c.displayName,
+                        endpoint: c.endpoint,
+                        type: c.type
+                    }))));
+                    updateActiveSensorsList();
+                    pollHardwareData();
+                    if (typeof registerCitiesWithHub === 'function') registerCitiesWithHub();
+                } else {
+                    alert('This endpoint is already connected');
+                }
+                document.getElementById('hardware-model').classList.add('hidden');
+                document.getElementById('local-name').value = '';
+                document.getElementById('local-endpoint').value = '';
+            }
+        });
+
+        // Poll API Data using the C# proxy
+        async function pollHardwareData() {
+            if (activeCities.length === 0) return;
+            
+            for (let i = 0; i < activeCities.length; i++) {
+                let cityObj = activeCities[i];
+                
+                try {
+                    if (cityObj.type === 'local' && cityObj.endpoint) {
+                        // Call proxy for local hardware
+                        const response = await fetch(`/api/sensors/local?endpoint=${encodeURIComponent(cityObj.endpoint)}`);
+                        if (!response.ok) throw new Error("Local API connection issue");
+                        
+                        const data = await response.json();
+                        cityObj.temp = data.temp !== undefined ? Number(Number(data.temp).toFixed(1)) : '--';
+                        cityObj.hum = data.hum !== undefined ? Number(Number(data.hum).toFixed(0)) : '--';
+                        cityObj.lastAqi = data.aqi !== undefined ? Math.round(data.aqi) : '--';
+                        
+                        if (!cityObj.dayHistory) {
+                            cityObj.dayHistory = [];
+                            let current_val = Number(data.aqi) || 50;
+                            for(let j=0; j<11; j++) {
+                                let past_val = current_val + (Math.random() * 40 - 20);
+                                cityObj.dayHistory.push(Math.max(5, Math.round(past_val)));
+                            }
+                            cityObj.dayHistory.push(current_val);
+                        } else {
+                            cityObj.dayHistory[11] = Number(data.aqi) || 50;
+                        }
+                        
+                        if (!cityObj.weekHistory) {
+                            cityObj.weekHistory = Array(7).fill(Number(data.aqi) || 50);
+                        }
+                        cityObj.status = 'ok';
+                    } else {
+                        // Call proxy for WAQI API
+                        const response = await fetch(`/api/sensors/feed?city=${encodeURIComponent(cityObj.city)}&token=${cityObj.token}`);
+                        if (!response.ok) throw new Error("WAQI proxy issue");
+                        
+                        const json = await response.json();
+                        if (json.status !== 'ok') throw new Error(json.data || "API Error");
+                        
+                        const data = json.data;
+                        const iaqi = data.iaqi || {};
+                        
+                        cityObj.displayName = data.city && data.city.name ? data.city.name : cityObj.displayName;
+                        cityObj.pm25 = iaqi.pm25 ? iaqi.pm25.v : '--';
+                        cityObj.temp = iaqi.t ? Number(iaqi.t.v.toFixed(1)) : '--';
+                        cityObj.hum = iaqi.h ? Number(iaqi.h.v.toFixed(0)) : '--';
+                        cityObj.lastAqi = data.aqi;
+                        
+                        let weekForecast = [];
+                        if (data.forecast && data.forecast.daily && data.forecast.daily.pm25) {
+                            weekForecast = data.forecast.daily.pm25.slice(0, 7).map(d => d.avg || d.max);
+                        }
+                        if (weekForecast.length < 7) {
+                            weekForecast = Array(7).fill(Number(data.aqi) || 50);
+                        }
+                        cityObj.weekHistory = weekForecast;
+
+                        if (!cityObj.dayHistory) {
+                            cityObj.dayHistory = [];
+                            let current_val = Number(data.aqi) || 50;
+                            for(let j=0; j<11; j++) {
+                                let past_val = current_val + (Math.random() * 40 - 20);
+                                cityObj.dayHistory.push(Math.max(5, Math.round(past_val)));
+                            }
+                            cityObj.dayHistory.push(current_val);
+                        } else {
+                            cityObj.dayHistory[11] = Number(data.aqi) || 50;
+                        }
+                        cityObj.status = 'ok';
+                    }
+                } catch (error) {
+                    console.error("Awaiting data connection for " + (cityObj.displayName || cityObj.city), error);
+                    cityObj.status = 'error';
+                }
+            }
+            
+            updateActiveSensorsList();
+            if(activeCities[selectedCityIndex]) {
+                updateMainStatsFromCity(activeCities[selectedCityIndex]);
+            }
+            localStorage.setItem('smartenviro_cities', JSON.stringify(activeCities.map(c => ({ city: c.city, token: c.token, displayName: c.displayName, endpoint: c.endpoint, type: c.type }))));
+            generateAlerts();
+            document.getElementById('last-updated').innerText = new Date().toLocaleTimeString();
+        }
+
+        // Alerts generation and management
+        let realTimeAlerts = [];
+        let alertHistory = [];
+        try {
+            const savedHistory = localStorage.getItem('smartenviro_alert_history');
+            if (savedHistory) {
+                alertHistory = JSON.parse(savedHistory);
+            }
+        } catch(e) { console.error('Error loading alert history', e); }
+
+        function saveAlertHistory() {
+            try {
+                localStorage.setItem('smartenviro_alert_history', JSON.stringify(alertHistory));
+            } catch (e) { console.error('Error saving alert history', e); }
+        }
+
+        function generateAlerts() {
+            realTimeAlerts = [];
+            if (activeCities.length > 0 && activeCities[selectedCityIndex]) {
+                const cityObj = activeCities[selectedCityIndex];
+                if (cityObj.status === 'ok') {
+                    const alertName = cityObj.displayName || cityObj.city;
+                    
+                    if (cityObj.lastAqi !== '--') {
+                        const aqi = parseInt(cityObj.lastAqi);
+                        if (aqi > 150) {
+                            realTimeAlerts.push({ city: alertName, type: 'AQI', level: 'danger', aqi: aqi, msg: 'Unhealthy air quality detected! Limit outdoor exertion.' });
+                        } else if (aqi > 100) {
+                            realTimeAlerts.push({ city: alertName, type: 'AQI', level: 'warning', aqi: aqi, msg: 'Unhealthy for sensitive groups. Wear a mask.' });
+                        } else if (aqi > 50) {
+                            realTimeAlerts.push({ city: alertName, type: 'AQI', level: 'moderate', aqi: aqi, msg: 'Moderate air quality. Acceptable conditions.' });
+                        } else {
+                            realTimeAlerts.push({ city: alertName, type: 'AQI', level: 'good', aqi: aqi, msg: 'Excellent air quality. Great day to be outside!' });
+                        }
+                    }
+
+                    const tempThreshold = localStorage.getItem('smartenviro_threshold_temperature') || 32;
+                    if (cityObj.temp !== '--' && cityObj.temp >= Number(tempThreshold)) {
+                        realTimeAlerts.push({ city: alertName, type: 'Temperature', level: 'danger', aqi: cityObj.temp + '°C', msg: `Temperature high: ${cityObj.temp}°C >= ${tempThreshold}°C` });
+                    }
+                    
+                    const humThreshold = localStorage.getItem('smartenviro_threshold_humidity') || 65;
+                    if (cityObj.hum !== '--' && cityObj.hum >= Number(humThreshold)) {
+                        realTimeAlerts.push({ city: alertName, type: 'Humidity', level: 'warning', aqi: cityObj.hum + '%', msg: `Humidity high: ${cityObj.hum}% >= ${humThreshold}%` });
+                    }
+                }
+            }
+
+            // Sync alert history updates
+            const now = new Date().toISOString();
+            const newAlertsToPush = [];
+            realTimeAlerts.forEach(alert => {
+                const lastEntryForType = [...alertHistory].reverse().find(a => a.city === alert.city && a.type === alert.type);
+                if (!lastEntryForType || lastEntryForType.level !== alert.level || lastEntryForType.msg !== alert.msg) {
+                    alertHistory.push({ ...alert, timestamp: now });
+                    if (alertHistory.length > 50) {
+                        alertHistory.shift();
+                    }
+                    newAlertsToPush.push(alert);
+                }
+            });
+            saveAlertHistory();
+
+            // Browser Notifications trigger
+            const notificationsEnabled = localStorage.getItem('smartenviro_notifications') !== 'disabled';
+            if (notificationsEnabled) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    newAlertsToPush.forEach(alert => {
+                        if (alert.level === 'danger' || alert.level === 'warning') {
+                            new Notification('SmartEnviro Alert: ' + alert.city, { body: alert.msg });
+                        }
+                    });
+                }
+            }
+
+            // Update Alerts list container UI
+            const container = document.getElementById('alerts-list-container');
+            document.getElementById('alerts-badge-count').innerText = realTimeAlerts.length;
+            
+            if (realTimeAlerts.length === 0) {
+                container.innerHTML = '<div class="text-on-surface-variant flex flex-col items-center gap-2 m-auto text-center mt-10">' +
+                    '<span class="material-symbols-outlined text-4xl text-outline mb-2">notifications_off</span>' +
+                    '<p class="text-sm font-semibold">No active alerts</p>' +
+                    '<p class="text-xs text-outline px-4">Air quality data is currently loading...</p>' +
+                '</div>';
+            } else {
+                let sidebarHtml = '';
+                realTimeAlerts.forEach(alert => {
+                    let colorClass, bgClass, icon = 'info';
+                    
+                    if (alert.level === 'danger') { colorClass = 'border-error text-error'; bgClass = 'bg-error/10'; icon = 'warning'; }
+                    else if (alert.level === 'warning') { colorClass = 'border-amber-500 text-amber-500'; bgClass = 'bg-amber-500/10'; icon = 'error_outline'; }
+                    else if (alert.level === 'moderate') { colorClass = 'border-indigo-500 text-indigo-500'; bgClass = 'bg-indigo-500/10'; icon = 'cloud'; }
+                    else { colorClass = 'border-emerald-500 text-emerald-500'; bgClass = 'bg-emerald-500/10'; icon = 'eco'; }
+                    
+                    sidebarHtml += '<div class="neomorphic-inset p-4 rounded-xl border-l-4 ' + colorClass + ' bg-surface-container-low flex flex-col gap-2 w-full animate-[pulse_1s_ease-in-out]">' +
+                        '<div class="flex justify-between items-start">' +
+                            '<div class="flex items-center gap-2">' +
+                                '<span class="material-symbols-outlined text-[16px]">' + icon + '</span>' +
+                                '<p class="text-sm font-bold capitalize text-on-surface">' + alert.city + '</p>' +
+                            '</div>' +
+                        '</div>' +
+                        '<p class="text-xs text-on-surface-variant">' + alert.msg + '</p>' +
+                    '</div>';
+                });
+                container.innerHTML = sidebarHtml;
+            }
+        }
+
+        // Listen for global settings changes
+        window.addEventListener('unitschanged', () => {
+            if (activeCities[selectedCityIndex]) {
+                updateMainStatsFromCity(activeCities[selectedCityIndex]);
+            }
+        });
+
+        // SignalR Connection Setup
+        let hubConnection = null;
+
+        function startSignalR() {
+            hubConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/sensorHub")
+                .withAutomaticReconnect()
+                .build();
+
+            hubConnection.on("ReceiveSensorUpdate", (data) => {
+                // Find matching city
+                const cityObj = activeCities.find(c => 
+                    c.city.toLowerCase() === data.city.toLowerCase() && 
+                    (c.type === data.type || (!c.type && !data.type)) &&
+                    (c.endpoint === data.endpoint || (!c.endpoint && !data.endpoint))
+                );
+
+                if (cityObj) {
+                    cityObj.temp = data.temp !== null ? data.temp : cityObj.temp;
+                    cityObj.hum = data.hum !== null ? data.hum : cityObj.hum;
+                    cityObj.lastAqi = data.lastAqi !== null ? data.lastAqi : cityObj.lastAqi;
+                    cityObj.pm25 = data.pm25 !== null ? data.pm25 : cityObj.pm25;
+                    cityObj.displayName = data.displayName || cityObj.displayName;
+                    cityObj.status = data.status;
+
+                    // Initialize or update day history
+                    if (!cityObj.dayHistory) {
+                        cityObj.dayHistory = [];
+                        let current_val = Number(cityObj.lastAqi) || 50;
+                        for(let j=0; j<11; j++) {
+                            let past_val = current_val + (Math.random() * 40 - 20);
+                            cityObj.dayHistory.push(Math.max(5, Math.round(past_val)));
+                        }
+                        cityObj.dayHistory.push(current_val);
+                    } else {
+                        cityObj.dayHistory[11] = Number(cityObj.lastAqi) || 50;
+                    }
+
+                    if (!cityObj.weekHistory) {
+                        cityObj.weekHistory = Array(7).fill(Number(cityObj.lastAqi) || 50);
+                    }
+
+                    updateActiveSensorsList();
+                    if (activeCities[selectedCityIndex] === cityObj) {
+                        updateMainStatsFromCity(cityObj);
+                    }
+                    generateAlerts();
+                    document.getElementById('last-updated').innerText = new Date().toLocaleTimeString();
+                }
+            });
+
+            hubConnection.start()
+                .then(() => {
+                    console.log("SignalR Connected.");
+                    registerCitiesWithHub();
+                })
+                .catch(err => console.error("SignalR Connection Error: ", err));
+        }
+
+        function registerCitiesWithHub() {
+            if (hubConnection && hubConnection.state === signalR.HubConnectionState.Connected) {
+                const list = activeCities.map(c => ({
+                    city: c.city,
+                    token: c.token || '2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a',
+                    displayName: c.displayName,
+                    endpoint: c.endpoint,
+                    type: c.type || 'waqi'
+                }));
+                hubConnection.invoke("RegisterCities", list).catch(err => console.error(err));
+            }
+        }
+
+        // Listen to Firebase cloud data sync event
+        window.addEventListener('smartenvirosync', () => {
+            console.log("[Dashboard] Cloud sync received, updating UI.");
+            loadCitiesFromStorage();
+            updateActiveSensorsList();
+            pollHardwareData();
+            registerCitiesWithHub();
+        });
+
+        // Initialize Poll & Loop
+        window.addEventListener('load', () => {
+            updateActiveSensorsList();
+            pollHardwareData();
+            startSignalR();
+        });
+    </script>
+    <script type="module" src="https://unpkg.com/@@splinetool/viewer@1.9.28/build/spline-viewer.js"></script>
+}

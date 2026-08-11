@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SmartEnviro</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class", 
+            theme: {
+                extend: {
+                    colors: { 
+                        "on-secondary-fixed": "#3c3f4d", 
+                        "surface-container-low": "#0f1322", 
+                        "on-primary": "#2724b8", 
+                        "inverse-on-surface": "#525462", 
+                        secondary: "#c4c5d7", 
+                        "on-tertiary-fixed": "#ffffff", 
+                        "tertiary-fixed-dim": "#7632e7", 
+                        "on-surface-variant": "#a5aac7", 
+                        "surface-variant": "#1f243c", 
+                        "primary-fixed-dim": "#6366f1", 
+                        "on-tertiary-fixed-variant": "#e5d5ff", 
+                        "surface-dim": "#0b0e19", 
+                        outline: "#6f7490", 
+                        "on-tertiary-container": "#ffffff", 
+                        "primary-container": "#3c3dca", 
+                        "on-secondary-fixed-variant": "#585b6a", 
+                        "surface-bright": "#252b43", 
+                        "inverse-primary": "#494bd7", 
+                        "outline-variant": "#414760", 
+                        error: "#f97386", 
+                        "secondary-fixed-dim": "#d2d3e5", 
+                        surface: "#0b0e19", 
+                        "primary-fixed": "#7073ff", 
+                        tertiary: "#af88ff", 
+                        "tertiary-fixed": "#8342f4", 
+                        "on-primary-fixed-variant": "#010028", 
+                        "surface-container": "#14192a", 
+                        background: "#0b0e19", 
+                        "surface-tint": "#c0c1ff", 
+                        "secondary-fixed": "#e0e1f4", 
+                        "on-surface": "#e1e4ff", 
+                        "on-primary-fixed": "#000000", 
+                        "on-error": "#490013", 
+                        "on-background": "#e1e4ff", 
+                        "on-primary-container": "#e2e0ff", 
+                        primary: "#c0c1ff", 
+                        "surface-container-high": "#1a1f32", 
+                        "error-container": "#871c34", 
+                        "tertiary-container": "#8342f4", 
+                        "on-tertiary": "#2b0065", 
+                        "surface-container-highest": "#1f243c", 
+                        "secondary-container": "#383b49", 
+                        "surface-container-lowest": "#000000", 
+                        "on-secondary-container": "#bdbed0", 
+                        "on-error-container": "#ff97a3", 
+                        "inverse-surface": "#fbf8ff", 
+                        "on-secondary": "#3d3f4e", 
+                        "primary-dim": "#6063ee", 
+                        "secondary-dim": "#b6b8c9", 
+                        "error-dim": "#c44b5f", 
+                        "tertiary-dim": "#8a4cfc" 
+                    }, 
+                    borderRadius: { 
+                        DEFAULT: "0.5rem", 
+                        lg: "1rem", 
+                        xl: "1.5rem", 
+                        full: "9999px" 
+                    }, 
+                    fontFamily: { 
+                        headline: ["Plus Jakarta Sans"], 
+                        body: ["Plus Jakarta Sans"], 
+                        label: ["Plus Jakarta Sans"], 
+                        display: "Plus Jakarta Sans" 
+                    } 
+                } 
+            } 
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #e8eaf0;
+            transition: background-color 0.3s ease;
+        }
+        html.dark body {
+            background-color: #0b0e19;
+        }
+        /* Support both spellings */
+        .neomorph-raised, .neomorphic-raised {
+            box-shadow: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.6);
+        }
+        .neomorph-inset, .neomorphic-inset {
+            box-shadow: inset 4px 4px 8px rgba(0,0,0,0.06), inset -4px -4px 8px rgba(255,255,255,0.5);
+        }
+        html.dark .neomorph-raised, html.dark .neomorphic-raised {
+            box-shadow: 6px 6px 12px rgba(0,0,0,0.25), -6px -6px 12px rgba(255,255,255,0.05);
+        }
+        html.dark .neomorph-inset, html.dark .neomorphic-inset {
+            box-shadow: inset 4px 4px 8px rgba(0,0,0,0.3), inset -4px -4px 8px rgba(255,255,255,0.05);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Hide Spline Logo & Watermark */
+        spline-viewer::part(logo),
+        spline-viewer::part(watermark) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        /* Crop bottom of viewer container to mask logo if shadow DOM part is encapsulated */
+        .spline-crop-container {
+            width: 100%;
+            height: calc(100% + 70px);
+            margin-bottom: -70px;
+        }
+    </style>
+    <script>
+        document.documentElement.classList.add('dark');
+    </script>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col relative overflow-x-hidden">
+    @{
+        var activePage = ViewData["ActivePage"] as string ?? "";
+        var requestPath = Context.Request.Path.Value?.ToLower() ?? "";
+        var isHomePage = activePage == "Home" || requestPath == "/" || requestPath == "/index";
+    }
+    @if (!isHomePage)
+    {
+        <!-- TopNavBar -->
+        <header class="flex flex-col md:flex-row justify-between items-center w-full sticky top-0 z-50 px-4 md:px-8 bg-[#e8eaf0] dark:bg-[#1a1c1e] min-h-[4rem] shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] py-2 md:py-0 transition-all duration-300">
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <a href="/" class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 tracking-tight hover:opacity-90 transition-opacity">SmartEnviro</a>
+                <button id="mobile-menu-btn" class="md:hidden neomorphic-raised bg-surface p-2 rounded-lg text-indigo-600 focus:outline-none">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+            
+            <nav id="mobile-menu-nav" class="hidden flex-col md:flex-row md:flex gap-4 md:gap-6 w-full md:w-auto mt-4 md:mt-0 font-['Plus_Jakarta_Sans']">
+                <a class="@(activePage == "Dashboard" ? "text-indigo-600 dark:text-indigo-400 font-semibold border-b-2 border-indigo-600" : "text-slate-500 dark:text-slate-400 hover:text-indigo-500") hover:scale-[1.02] transition-transform duration-200 text-sm py-1" href="/Dashboard">Dashboard</a>
+                <a class="@(activePage == "Map" ? "text-indigo-600 dark:text-indigo-400 font-semibold border-b-2 border-indigo-600" : "text-slate-500 dark:text-slate-400 hover:text-indigo-500") hover:scale-[1.02] transition-transform duration-200 text-sm py-1" href="/Map">Map</a>
+                <a class="@(activePage == "Alerts" ? "text-indigo-600 dark:text-indigo-400 font-semibold border-b-2 border-indigo-600" : "text-slate-500 dark:text-slate-400 hover:text-indigo-500") hover:scale-[1.02] transition-transform duration-200 text-sm py-1" href="/Alerts">Alerts</a>
+            </nav>
+            
+            <div id="mobile-menu-actions" class="hidden md:flex flex-wrap items-center gap-4 mt-4 md:mt-0 w-full md:w-auto pb-2 md:pb-0 justify-between md:justify-end">
+                @await RenderSectionAsync("HeaderActions", required: false)
+                <div class="flex items-center gap-4">
+                    <button id="nav-notifications-btn" class="neomorphic-raised bg-surface p-2 rounded-full hover:scale-[1.02] transition-transform duration-200 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]">
+                        <span class="material-symbols-outlined text-indigo-600">notifications</span>
+                    </button>
+                    <button id="nav-settings-btn" class="neomorphic-raised bg-surface p-2 rounded-full hover:scale-[1.02] transition-transform duration-200 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]">
+                        <span class="material-symbols-outlined text-indigo-600">settings</span>
+                    </button>
+                    <!-- Auth Status / Sign In Control -->
+                    <button id="nav-auth-btn" class="neomorphic-raised bg-primary text-white px-4 py-1.5 rounded-full text-xs font-bold transition-transform hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                        <span class="material-symbols-outlined text-sm">login</span> Sign In
+                    </button>
+
+                    <!-- Logged In User Dropdown -->
+                    <div id="nav-user-dropdown" class="hidden relative group">
+                        <div class="flex items-center gap-2.5 cursor-pointer neomorphic-raised bg-surface px-3 py-1 rounded-full">
+                            <img id="nav-user-avatar" alt="Profile" class="w-7 h-7 rounded-full object-cover border border-primary/50" src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff"/>
+                            <span id="nav-user-name" class="text-xs font-bold text-on-surface max-w-[100px] truncate">Account</span>
+                            <span class="material-symbols-outlined text-sm text-outline">expand_more</span>
+                        </div>
+                        <div class="absolute right-0 mt-2 w-52 bg-surface neomorphic-raised rounded-xl p-2 hidden group-hover:block z-50 border border-surface-container-high shadow-xl">
+                            <div class="px-3 py-2 border-b border-surface-variant mb-1">
+                                <p class="text-xs text-outline font-medium">Logged in as</p>
+                                <p id="nav-user-email" class="text-xs font-bold text-on-surface truncate">user@example.com</p>
+                            </div>
+                            <button id="nav-logout-btn" class="w-full text-left px-3 py-2 text-xs font-bold text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">logout</span> Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    }
+
+    @RenderBody()
+
+    <!-- Firebase Authentication Modal -->
+    <div id="auth-modal" class="hidden font-['Plus_Jakarta_Sans'] fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-[#0f1322]/50 backdrop-blur-sm"></div>
+        <div class="relative w-full max-w-sm bg-surface neomorphic-raised rounded-2xl p-6 flex flex-col gap-5 border border-surface-variant">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-on-surface">Account Portal</h3>
+                <button id="auth-modal-close" class="text-on-surface-variant hover:text-error transition-colors"><span class="material-symbols-outlined">close</span></button>
+            </div>
+
+            <!-- Login / Register Switcher -->
+            <div class="flex gap-2 neomorphic-inset bg-surface-container-low p-1 rounded-xl">
+                <button id="auth-tab-login" class="flex-1 py-2 rounded-lg font-bold text-sm bg-primary text-white transition-all shadow">Sign In</button>
+                <button id="auth-tab-register" class="flex-1 py-2 rounded-lg font-semibold text-sm bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-all">Create Account</button>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="auth-error-msg" class="hidden bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-xl text-xs font-medium"></div>
+
+            <!-- Sign In Form -->
+            <form id="auth-form-login" class="flex flex-col gap-3">
+                <div class="neomorphic-inset bg-surface px-4 py-2.5 rounded-xl flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-outline text-lg">mail</span>
+                    <input id="login-email" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="Email address" type="email" required/>
+                </div>
+                <div class="neomorphic-inset bg-surface px-4 py-2.5 rounded-xl flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-outline text-lg">lock</span>
+                    <input id="login-password" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="Password" type="password" required/>
+                </div>
+                <button id="login-submit-btn" type="submit" class="w-full py-3 mt-1 neomorphic-raised bg-primary text-white rounded-xl text-sm font-bold transition-transform hover:scale-[1.02] active:scale-95 shadow-md">Sign In</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="auth-form-register" class="hidden flex flex-col gap-3">
+                <div class="neomorphic-inset bg-surface px-4 py-2.5 rounded-xl flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-outline text-lg">person</span>
+                    <input id="register-name" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="Full name" type="text"/>
+                </div>
+                <div class="neomorphic-inset bg-surface px-4 py-2.5 rounded-xl flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-outline text-lg">mail</span>
+                    <input id="register-email" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="Email address" type="email" required/>
+                </div>
+                <div class="neomorphic-inset bg-surface px-4 py-2.5 rounded-xl flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-outline text-lg">lock</span>
+                    <input id="register-password" class="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-outline w-full" placeholder="Password (min 6 chars)" type="password" required/>
+                </div>
+                <button id="register-submit-btn" type="submit" class="w-full py-3 mt-1 neomorphic-raised bg-primary text-white rounded-xl text-sm font-bold transition-transform hover:scale-[1.02] active:scale-95 shadow-md">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    @if (!isHomePage)
+    {
+        <!-- Footer -->
+        <footer class="w-full py-8 mt-auto border-t border-slate-200 dark:border-slate-800 bg-[#e8eaf0] dark:bg-[#1a1c1e]">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center px-8">
+                <p class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400">© 2026 SmartEnviro Intelligence. All rights reserved.</p>
+                <div class="flex gap-6 mt-4 md:mt-0">
+                    <a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 hover:text-indigo-500 transition-colors cursor-pointer" href="#">Privacy Policy</a>
+                    <a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 hover:text-indigo-500 transition-colors cursor-pointer" href="#">Terms of Service</a>
+                    <a class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 hover:text-indigo-500 transition-colors cursor-pointer" href="#">API Documentation</a>
+                </div>
+            </div>
+        </footer>
+    }
+
+    <!-- Notifications Modal -->
+    <div id="notifications-modal" class="hidden font-['Plus_Jakarta_Sans'] fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-[#0f1322]/40 backdrop-blur-sm modal-backdrop"></div>
+        <div class="relative w-full max-w-sm bg-surface neomorphic-raised rounded-2xl p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-on-surface text-[#0f1322] dark:text-white">Weather & Local Alerts</h3>
+                <button class="text-on-surface-variant hover:text-error transition-colors modal-close-btn"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="flex flex-col gap-3">
+                <div class="neomorphic-inset bg-surface-container-low p-4 rounded-xl border-l-4 border-amber-500">
+                    <p class="text-sm font-semibold text-on-surface text-[#0f1322] dark:text-white">Heavy Rain Expected</p>
+                    <p class="text-xs text-on-surface-variant">Precipitation likely in your area within the next 2 hours. High wind speeds detected.</p>
+                    <p class="text-[10px] text-outline mt-2">Just now</p>
+                </div>
+                <div class="neomorphic-inset bg-surface-container-low p-4 rounded-xl border-l-4 border-emerald-500">
+                    <p class="text-sm font-semibold text-on-surface text-[#0f1322] dark:text-white">Air Quality Improving</p>
+                    <p class="text-xs text-on-surface-variant">Wind shift has cleared suburban smog. Expected AQI to drop to 35 soon.</p>
+                    <p class="text-[10px] text-outline mt-2">1 hr ago</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden font-['Plus_Jakarta_Sans'] fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-[#0f1322]/40 backdrop-blur-sm modal-backdrop"></div>
+        <div class="relative w-full max-w-sm bg-surface neomorphic-raised rounded-2xl p-6 flex flex-col gap-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-on-surface text-[#0f1322] dark:text-white">Quick Settings</h3>
+                <button class="text-on-surface-variant hover:text-error transition-colors modal-close-btn"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-semibold text-on-surface text-[#0f1322] dark:text-white">Metric Units</p>
+                        <p class="text-xs text-on-surface-variant">Use Celsius (°C)</p>
+                    </div>
+                    <div id="units-toggle" class="w-12 h-6 neomorphic-inset rounded-full relative cursor-pointer outline-none bg-surface-variant transition-colors duration-300">
+                        <div class="knob absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-sm"></div>
+                    </div>
+                </div>
+            </div>
+            <button class="w-full py-2 neomorphic-raised rounded-lg text-sm font-bold text-primary transition-colors hover:scale-105 active:scale-95 modal-close-btn">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Global Layout Scripts -->
+    <script>
+        // Modal Event Listeners
+        const notifModal = document.getElementById('notifications-modal');
+        const settingsModal = document.getElementById('settings-modal');
+
+        document.getElementById('nav-notifications-btn')?.addEventListener('click', () => {
+            notifModal.classList.remove('hidden');
+        });
+        document.getElementById('nav-settings-btn')?.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+
+        // Close buttons inside modals
+        document.querySelectorAll('.modal-close-btn, .modal-backdrop').forEach(el => {
+            el.addEventListener('click', () => {
+                notifModal.classList.add('hidden');
+                settingsModal.classList.add('hidden');
+            });
+        });
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
+            document.getElementById('mobile-menu-nav')?.classList.toggle('hidden');
+            document.getElementById('mobile-menu-nav')?.classList.toggle('flex');
+            document.getElementById('mobile-menu-actions')?.classList.toggle('hidden');
+            document.getElementById('mobile-menu-actions')?.classList.toggle('flex');
+        });
+
+        // Initialize Settings States and Event Handlers
+        window.addEventListener('DOMContentLoaded', () => {
+            // Metric Units Switch Setup
+            const unitsToggle = document.getElementById('units-toggle');
+            if (unitsToggle) {
+                const knob = unitsToggle.querySelector('.knob');
+                const useMetric = localStorage.getItem('smartenviro_metric_units') !== 'disabled';
+                if (useMetric) {
+                    unitsToggle.classList.replace('bg-surface-variant', 'bg-primary');
+                    knob.classList.replace('left-1', 'right-1');
+                }
+                
+                unitsToggle.addEventListener('click', () => {
+                    const metricEnabled = localStorage.getItem('smartenviro_metric_units') !== 'disabled';
+                    const newMetricState = !metricEnabled;
+                    localStorage.setItem('smartenviro_metric_units', newMetricState ? 'enabled' : 'disabled');
+                    
+                    unitsToggle.classList.toggle('bg-primary');
+                    unitsToggle.classList.toggle('bg-surface-variant');
+                    knob.classList.toggle('left-1');
+                    knob.classList.toggle('right-1');
+                    
+                    window.dispatchEvent(new CustomEvent('unitschanged', { detail: { metric: newMetricState } }));
+                });
+            }
+        });
+    </script>
+
+    <!-- Firebase Integration -->
+    <script type="module" src="~/js/firebase-config.js"></script>
+    <script src="~/js/firebase-auth-sync.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

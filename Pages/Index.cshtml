@@ -1,0 +1,38 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "SmartEnviro";
+    ViewData["ActivePage"] = "Home";
+}
+
+<!-- Full-Screen Pure 3D Spline Canvas Landing Page -->
+<main id="landing-page-click-area" class="fixed inset-0 z-40 bg-[#0b0e19] flex items-center justify-center cursor-pointer select-none overflow-hidden">
+    
+    <!-- Official Spline 3D Web Component Embed with Cropped Bottom Mask -->
+    <div class="spline-crop-container relative overflow-hidden pointer-events-none">
+        <spline-viewer id="landing-spline" url="https://prod.spline.design/waDdfpGiphbZsFsC/scene.splinecode" class="w-full h-full block pointer-events-none"></spline-viewer>
+    </div>
+
+</main>
+
+@section Scripts {
+    <!-- Spline Viewer Official Web Component Script -->
+    <script type="module" src="https://unpkg.com/@@splinetool/viewer@1.9.28/build/spline-viewer.js"></script>
+    <script>
+        // Remove Spline watermark badge directly from shadow DOM once loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            const splineEl = document.getElementById('landing-spline');
+            if (splineEl) {
+                const removeLogo = () => {
+                    if (splineEl.shadowRoot) {
+                        const logo = splineEl.shadowRoot.querySelector('#logo, #watermark, a[href*="spline"]');
+                        if (logo) logo.remove();
+                    }
+                };
+                setTimeout(removeLogo, 500);
+                setTimeout(removeLogo, 1500);
+                setTimeout(removeLogo, 3000);
+            }
+        });
+    </script>
+}

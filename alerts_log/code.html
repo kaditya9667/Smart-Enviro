@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+
+<html class="light dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>SmartEnviro | Alerts &amp; Notifications</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script
+        id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-fixed": "#3c3f4d", "surface-container-low": "#0f1322", "on-primary": "#2724b8", "inverse-on-surface": "#525462", secondary: "#c4c5d7", "on-tertiary-fixed": "#ffffff", "tertiary-fixed-dim": "#7632e7", "on-surface-variant": "#a5aac7", "surface-variant": "#1f243c", "primary-fixed-dim": "#6366f1", "on-tertiary-fixed-variant": "#e5d5ff", "surface-dim": "#0b0e19", outline: "#6f7490", "on-tertiary-container": "#ffffff", "primary-container": "#3c3dca", "on-secondary-fixed-variant": "#585b6a", "surface-bright": "#252b43", "inverse-primary": "#494bd7", "outline-variant": "#414760", error: "#f97386", "secondary-fixed-dim": "#d2d3e5", surface: "#0b0e19", "primary-fixed": "#7073ff", tertiary: "#af88ff", "tertiary-fixed": "#8342f4", "on-primary-fixed-variant": "#010028", "surface-container": "#14192a", background: "#0b0e19", "surface-tint": "#c0c1ff", "secondary-fixed": "#e0e1f4", "on-surface": "#e1e4ff", "on-primary-fixed": "#000000", "on-error": "#490013", "on-background": "#e1e4ff", "on-primary-container": "#e2e0ff", primary: "#c0c1ff", "surface-container-high": "#1a1f32", "error-container": "#871c34", "tertiary-container": "#8342f4", "on-tertiary": "#2b0065", "surface-container-highest": "#1f243c", "secondary-container": "#383b49", "surface-container-lowest": "#000000", "on-secondary-container": "#bdbed0", "on-error-container": "#ff97a3", "inverse-surface": "#fbf8ff", "on-secondary": "#3d3f4e", "primary-dim": "#6063ee", "tertiary-dim": "#8a4cfc", "secondary-dim": "#b6b8c9", "error-dim": "#c44b5f" }, borderRadius: { DEFAULT: "0.5rem", lg: "1rem", xl: "1.5rem", full: "9999px" }, fontFamily: { headline: ["Plus Jakarta Sans"], body: ["Plus Jakarta Sans"], label: ["Plus Jakarta Sans"], display: "Plus Jakarta Sans" } } } };</script>
+    <style>
+        .neomorph-raised {
+            box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.08), -6px -6px 12px rgba(255, 255, 255, 0.6);
+        }
+
+        .neomorph-inset {
+            box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 00.06), inset -4px -4px 8px rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            background-color: #0b0e19;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface min-h-screen">
+    <!-- TopNavBar -->
+    <header
+        class="flex flex-col md:flex-row justify-between items-center w-full sticky top-0 z-50 px-4 md:px-8 bg-background min-h-[4rem] shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] py-2 md:py-0 transition-all duration-300">
+        <div class="flex items-center justify-between w-full md:w-auto">
+            <span class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 tracking-tight">SmartEnviro</span>
+            <button id="mobile-menu-btn"
+                class="md:hidden neomorph-raised p-2 rounded-lg text-indigo-600 focus:outline-none">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+        </div>
+        <nav id="mobile-menu-nav"
+            class="hidden flex-col md:flex-row md:flex gap-4 md:gap-6 w-full md:w-auto mt-4 md:mt-0 font-['Plus_Jakarta_Sans']">
+            <a class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:scale-[1.02] transition-transform duration-200 py-1 text-sm"
+                href="../dashboard/code.html">Dashboard</a>
+            <a class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:scale-[1.02] transition-transform duration-200 py-1 text-sm"
+                href="../sensor_map/code.html">Map</a>
+            <a class="text-indigo-600 dark:text-indigo-400 font-semibold border-b-2 border-indigo-600 hover:scale-[1.02] transition-transform duration-200 py-1 text-sm"
+                href="../alerts_log/code.html">Alerts</a>
+        </nav>
+        <div id="mobile-menu-actions"
+            class="hidden md:flex flex-wrap items-center gap-4 mt-4 md:mt-0 w-full md:w-auto pb-2 md:pb-0 justify-between md:justify-end">
+            <div class="flex items-center gap-4">
+                <button id="nav-notifications-btn"
+                    class="neomorph-raised p-2 rounded-lg text-slate-500 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] transition-transform duration-200 hover:scale-[1.02]">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+                <button id="nav-settings-btn"
+                    class="neomorph-raised p-2 rounded-lg text-slate-500 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] transition-transform duration-200 hover:scale-[1.02]">
+                    <span class="material-symbols-outlined">settings</span>
+                </button>
+                <div class="neomorph-raised w-10 h-10 rounded-full overflow-hidden border-2 border-[#e8eaf0] shrink-0">
+                    <img alt="User Profile"
+                        data-alt="close-up portrait of a professional man in a business casual environment with soft studio lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBi0193aXRFhhklNOySDsFuJDqPn5rovQjlmbWJRmraPMETo5ftpoDYvRjbf09s4vY4k8F7Y8v6UDe5VGhOTI1_QKyNi1Bchgda3-_-clrvFFN7fSyLJaYwOJoNoLDhxGjPKSNN7xdY3Sx6Qpbd4WHdLQijd_b48fm1kUaX9sFUsZ1y8IjVEbh8oshkcsMbM0T4ZGBuhcEKRRc8v4gf1hpk6f5Fzq4D-GytuZRpDrR7n8rrSCwUEHtaRxKvycClpWb_eKvF5z_ZZ6Bh" />
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-8 py-12">
+        <header class="mb-12">
+            <h1 class="text-3xl font-semibold text-on-surface tracking-tight mb-2">Alerts &amp; Notifications</h1>
+            <p class="text-on-surface-variant">Manage your environmental monitoring thresholds and delivery preferences.
+            </p>
+        </header>
+        <!-- Main Bento Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Threshold Settings -->
+            <section class="lg:col-span-2 space-y-8">
+                <div class="neomorph-raised bg-background p-8 rounded-xl">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="material-symbols-outlined text-primary">tune</span>
+                        <h2 class="text-xl font-semibold">Sensor Thresholds</h2>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- CO2 Setting -->
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium text-on-surface-variant">CO2 Levels</label>
+                                <span id="co2-value" class="text-primary font-semibold">1,000 ppm</span>
+                            </div>
+                            <input id="co2-range" type="range" min="400" max="2000" value="1000" step="50"
+                                class="w-full accent-primary" />
+                            <p class="text-xs text-secondary italic">Recommended for office air quality.</p>
+                        </div>
+                        <!-- Humidity Setting -->
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium text-on-surface-variant">Humidity Range (Max)</label>
+                                <span id="hum-value" class="text-primary font-semibold">65 %</span>
+                            </div>
+                            <input id="hum-range" type="range" min="20" max="100" value="65" step="1"
+                                class="w-full accent-primary" />
+                        </div>
+                        <!-- Temperature Setting -->
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium text-on-surface-variant">Temperature High</label>
+                                <span id="temp-value" class="text-primary font-semibold">32 °C</span>
+                            </div>
+                            <input id="temp-range" type="range" min="18" max="45" value="32" step="0.5"
+                                class="w-full accent-primary" />
+                        </div>
+                    </div>
+                </div>
+                <!-- Historical Alerts Log -->
+                <div class="neomorph-raised bg-background p-8 rounded-xl">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary">history</span>
+                            <h2 class="text-xl font-semibold">Alert History</h2>
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="neomorph-inset px-4 py-2 rounded-lg flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-secondary">filter_list</span>
+                                <select
+                                    class="bg-transparent border-none text-sm text-on-surface-variant focus:ring-0 cursor-pointer">
+                                    <option>All Severities</option>
+                                    <option>Critical</option>
+                                    <option>Warning</option>
+                                    <option>Info</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="alert-history-container" class="space-y-4">
+                        <!-- Alert Item 1 -->
+                        <div class="flex items-center p-4 neomorph-inset rounded-xl bg-[#e8eaf0]/50">
+                            <div class="w-10 h-10 rounded-lg bg-error-container flex items-center justify-center mr-4">
+                                <span class="material-symbols-outlined text-error"
+                                    style="font-variation-settings: 'FILL' 1;">warning</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between">
+                                    <h4 class="font-semibold text-on-surface">Critical PM2.5 Level</h4>
+                                    <span class="text-xs text-secondary">2 mins ago</span>
+                                </div>
+                                <p class="text-sm text-on-surface-variant">Sensor A-14 detected 78 µg/m³</p>
+                            </div>
+                            <div
+                                class="ml-4 px-3 py-1 bg-surface-container-highest text-[10px] font-bold uppercase rounded-full tracking-wider">
+                                Active</div>
+                        </div>
+                        <!-- Alert Item 2 -->
+                        <div class="flex items-center p-4 neomorph-raised rounded-xl bg-background">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-tertiary-container flex items-center justify-center mr-4">
+                                <span class="material-symbols-outlined text-white">thermostat</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between">
+                                    <h4 class="font-semibold text-on-surface">Temp Threshold Exceeded</h4>
+                                    <span class="text-xs text-secondary">4 hours ago</span>
+                                </div>
+                                <p class="text-sm text-on-surface-variant">Server Room 2 reached 34.5°C</p>
+                            </div>
+                            <div
+                                class="ml-4 px-3 py-1 bg-surface-container-low text-secondary text-[10px] font-bold uppercase rounded-full tracking-wider">
+                                Resolved</div>
+                        </div>
+                        <!-- Alert Item 3 -->
+                        <div class="flex items-center p-4 neomorph-raised rounded-xl bg-background">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center mr-4">
+                                <span class="material-symbols-outlined text-white">cloud_queue</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between">
+                                    <h4 class="font-semibold text-on-surface">CO2 Concentration Warning</h4>
+                                    <span class="text-xs text-secondary">Yesterday</span>
+                                </div>
+                                <p class="text-sm text-on-surface-variant">Main Lobby peak at 1,120 ppm</p>
+                            </div>
+                            <div
+                                class="ml-4 px-3 py-1 bg-surface-container-low text-secondary text-[10px] font-bold uppercase rounded-full tracking-wider">
+                                Resolved</div>
+                        </div>
+                    </div>
+                    <button
+                        class="w-full mt-8 py-3 neomorph-raised rounded-xl text-primary font-medium hover:scale-[1.01] transition-transform active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]">
+                        View Full Audit Log
+                    </button>
+                </div>
+            </section>
+            <!-- Channel Settings & Summary Sidebar -->
+            <aside class="space-y-8">
+                <!-- Notification Channels -->
+                <div class="neomorph-raised bg-background p-8 rounded-xl">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="material-symbols-outlined text-primary">notifications_active</span>
+                        <h2 class="text-xl font-semibold">Delivery</h2>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-10 h-10 neomorph-raised rounded-lg flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined">mail</span>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Email</p>
+                                    <p class="text-xs text-secondary">Daily summaries</p>
+                                </div>
+                            </div>
+                            <div
+                                class="delivery-toggle w-12 h-6 neomorph-inset rounded-full relative cursor-pointer bg-primary transition-colors duration-300">
+                                <div
+                                    class="absolute right-1 top-1 w-4 h-4 neomorph-raised bg-white rounded-full transition-all duration-300">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-10 h-10 neomorph-raised rounded-lg flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined">sms</span>
+                                </div>
+                                <div>
+                                    <p class="font-medium">SMS</p>
+                                    <p class="text-xs text-secondary">Critical alerts only</p>
+                                </div>
+                            </div>
+                            <div
+                                class="delivery-toggle w-12 h-6 neomorph-inset rounded-full relative cursor-pointer transition-colors duration-300">
+                                <div
+                                    class="absolute left-1 top-1 w-4 h-4 neomorph-raised bg-white rounded-full transition-all duration-300">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-10 h-10 neomorph-raised rounded-lg flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined">desktop_windows</span>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Browser Alerts</p>
+                                    <p class="text-xs text-secondary">Push notifications to OS</p>
+                                </div>
+                            </div>
+                            <div id="toggle-browser-alerts"
+                                class="w-12 h-6 neomorph-inset rounded-full relative cursor-pointer bg-primary transition-colors duration-300" onclick="toggleBrowserAlerts(this)">
+                                <div
+                                    class="absolute right-1 top-1 w-4 h-4 neomorph-raised bg-white rounded-full transition-all duration-300">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Alert Stats / Health -->
+                <div class="neomorph-raised bg-background p-8 rounded-xl relative overflow-hidden group">
+                    <div class="relative z-10">
+                        <h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4">System
+                            Health</h3>
+                        <div class="text-4xl font-extrabold text-primary mb-2">98.2%</div>
+                        <p class="text-sm text-on-surface-variant">Alert resolution rate is <span
+                                class="text-green-600 font-bold">+2.4%</span> this week.</p>
+                        <div class="mt-6 flex gap-2">
+                            <div class="h-1 flex-1 neomorph-inset rounded-full overflow-hidden">
+                                <div class="h-full w-full bg-primary"></div>
+                            </div>
+                            <div class="h-1 flex-1 neomorph-inset rounded-full overflow-hidden">
+                                <div class="h-full w-3/4 bg-primary"></div>
+                            </div>
+                            <div class="h-1 flex-1 neomorph-inset rounded-full overflow-hidden">
+                                <div class="h-full w-1/2 bg-surface-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                        <span class="material-symbols-outlined text-9xl">insights</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer class="bg-[#e8eaf0] dark:bg-[#1a1c1e] border-t border-slate-200 dark:border-slate-800 mt-auto py-12">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center px-8">
+            <div class="font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400 mb-6 md:mb-0">
+                © 2026 SmartEnviro Intelligence. All rights reserved.
+            </div>
+            <div class="flex gap-8 font-['Plus_Jakarta_Sans'] text-sm text-slate-500 dark:text-slate-400">
+                <a class="hover:text-indigo-500 transition-colors cursor-pointer" href="#">Privacy Policy</a>
+                <a class="hover:text-indigo-500 transition-colors cursor-pointer" href="#">Terms of Service</a>
+                <a class="hover:text-indigo-500 transition-colors cursor-pointer" href="#">API Documentation</a>
+            </div>
+        </div>
+    </footer>
+    <!-- Notifications Modal -->
+    <div id="notifications-modal"
+        class="hidden font-['Plus_Jakarta_Sans'] fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-[#0f1322]/40 backdrop-blur-sm"
+            onclick="document.getElementById('notifications-modal').classList.add('hidden')"></div>
+        <div class="relative w-full max-w-sm bg-surface neomorph-raised rounded-2xl p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-on-surface text-[#0f1322] dark:text-white">Weather & Local Alerts</h3>
+                <button onclick="document.getElementById('notifications-modal').classList.add('hidden')"
+                    class="text-on-surface-variant hover:text-error transition-colors"><span
+                        class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="flex flex-col gap-3">
+                <div class="neomorph-inset bg-surface-container-low p-4 rounded-xl border-l-4 border-amber-500">
+                    <p class="text-sm font-semibold text-on-surface text-[#0f1322] dark:text-white">Heavy Rain Expected
+                    </p>
+                    <p class="text-xs text-on-surface-variant">Precipitation likely in your area within the next 2
+                        hours. High wind speeds detected.</p>
+                    <p class="text-[10px] text-outline mt-2">Just now</p>
+                </div>
+                <div class="neomorph-inset bg-surface-container-low p-4 rounded-xl border-l-4 border-emerald-500">
+                    <p class="text-sm font-semibold text-on-surface text-[#0f1322] dark:text-white">Air Quality
+                        Improving</p>
+                    <p class="text-xs text-on-surface-variant">Wind shift has cleared suburban smog. Expected AQI to
+                        drop to 35 soon.</p>
+                    <p class="text-[10px] text-outline mt-2">1 hr ago</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal"
+        class="hidden font-['Plus_Jakarta_Sans'] fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-[#0f1322]/40 backdrop-blur-sm"
+            onclick="document.getElementById('settings-modal').classList.add('hidden')"></div>
+        <div class="relative w-full max-w-sm bg-surface neomorph-raised rounded-2xl p-6 flex flex-col gap-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-on-surface text-[#0f1322] dark:text-white">Quick Settings</h3>
+                <button onclick="document.getElementById('settings-modal').classList.add('hidden')"
+                    class="text-on-surface-variant hover:text-error transition-colors"><span
+                        class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-semibold text-on-surface text-[#0f1322] dark:text-white">Dark Mode</p>
+                        <p class="text-xs text-on-surface-variant">Toggle dark UI theme</p>
+                    </div>
+                    <div class="w-12 h-6 neomorph-inset rounded-full relative cursor-pointer outline-none bg-surface-variant"
+                        onclick="document.documentElement.classList.toggle('dark'); this.children[0].classList.toggle('left-1'); this.children[0].classList.toggle('right-1'); this.classList.toggle('bg-primary'); this.classList.toggle('bg-surface-variant');">
+                        <div
+                            class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-semibold text-on-surface text-[#0f1322] dark:text-white">Metric Units</p>
+                        <p class="text-xs text-on-surface-variant">Use Celsius (°C)</p>
+                    </div>
+                    <div class="w-12 h-6 neomorph-inset rounded-full relative cursor-pointer outline-none bg-primary"
+                        onclick="this.children[0].classList.toggle('left-1'); this.children[0].classList.toggle('right-1'); this.classList.toggle('bg-primary'); this.classList.toggle('bg-surface-variant');">
+                        <div
+                            class="absolute right-1 top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="document.getElementById('settings-modal').classList.add('hidden')"
+                class="w-full py-2 neomorph-raised rounded-lg text-sm font-bold text-primary transition-colors hover:scale-105 active:scale-95">Save
+                Settings</button>
+        </div>
+    </div>
+
+    <script>
+        let browserAlertsEnabled = localStorage.getItem('smartenviro_notifications') !== 'disabled';
+        
+        window.addEventListener('DOMContentLoaded', () => {
+             const toggle = document.getElementById('toggle-browser-alerts');
+             if (toggle && !browserAlertsEnabled) {
+                 toggle.children[0].classList.replace('right-1', 'left-1');
+                 toggle.classList.remove('bg-primary');
+             }
+        });
+
+        function toggleBrowserAlerts(el) {
+            browserAlertsEnabled = !browserAlertsEnabled;
+            localStorage.setItem('smartenviro_notifications', browserAlertsEnabled ? 'enabled' : 'disabled');
+            el.children[0].classList.toggle('left-1');
+            el.children[0].classList.toggle('right-1');
+            el.classList.toggle('bg-primary');
+            if (browserAlertsEnabled && 'Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // Nav Modals
+        document.getElementById('nav-notifications-btn')?.addEventListener('click', () => {
+            document.getElementById('notifications-modal').classList.remove('hidden');
+        });
+        document.getElementById('nav-settings-btn')?.addEventListener('click', () => {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        });
+
+        // Mobile menu
+        document.getElementById('mobile-menu-btn').addEventListener('click', function () {
+            document.getElementById('mobile-menu-nav').classList.toggle('hidden');
+            document.getElementById('mobile-menu-nav').classList.toggle('flex');
+            document.getElementById('mobile-menu-actions').classList.toggle('hidden');
+            document.getElementById('mobile-menu-actions').classList.toggle('flex');
+        });
+
+        document.querySelectorAll('.delivery-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function () {
+                this.classList.toggle('bg-primary');
+                const knob = this.children[0];
+                if (knob.classList.contains('right-1')) {
+                    knob.classList.remove('right-1');
+                    knob.classList.add('left-1');
+                } else {
+                    knob.classList.remove('left-1');
+                    knob.classList.add('right-1');
+                }
+            });
+        });
+
+        // Load and display alert history
+        function loadAlertHistory() {
+            let alertHistory = [];
+            try {
+                const saved = localStorage.getItem('smartenviro_alert_history');
+                if (saved) {
+                    alertHistory = JSON.parse(saved);
+                }
+            } catch(e) { console.error('Error loading alert history', e); }
+
+            const container = document.querySelector('#alert-history-container');
+            if (alertHistory.length === 0) {
+                container.innerHTML = '<p class="text-center text-on-surface-variant py-8">No alerts in history yet.</p>';
+                return;
+            }
+
+            let html = '';
+            alertHistory.slice(-10).reverse().forEach(alert => { // Show last 10, most recent first
+                let colorClass, icon;
+                if (alert.level === 'danger') { colorClass = 'bg-error-container'; icon = 'warning'; }
+                else if (alert.level === 'warning') { colorClass = 'bg-amber-500/20'; icon = 'error_outline'; }
+                else if (alert.level === 'moderate') { colorClass = 'bg-indigo-500/20'; icon = 'cloud'; }
+                else { colorClass = 'bg-emerald-500/20'; icon = 'eco'; }
+
+                const timeAgo = getTimeAgo(new Date(alert.timestamp));
+                html += '<div class="flex items-center p-4 neomorph-inset rounded-xl bg-surface-container-low">' +
+                    '<div class="w-10 h-10 rounded-lg ' + colorClass + ' flex items-center justify-center mr-4">' +
+                        '<span class="material-symbols-outlined text-primary">' + icon + '</span>' +
+                    '</div>' +
+                    '<div class="flex-1">' +
+                        '<div class="flex justify-between">' +
+                            '<h4 class="font-semibold text-on-surface capitalize">' + alert.city + ' - ' + alert.level + '</h4>' +
+                            '<span class="text-xs text-secondary">' + timeAgo + '</span>' +
+                        '</div>' +
+                        '<p class="text-sm text-on-surface-variant">' + alert.msg + ' (AQI: ' + alert.aqi + ')</p>' +
+                    '</div>' +
+                    '<div class="ml-4 px-3 py-1 bg-surface-container-highest text-[10px] font-bold uppercase rounded-full tracking-wider">Resolved</div>' +
+                '</div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return minutes + ' mins ago';
+            if (hours < 24) return hours + ' hours ago';
+            return days + ' days ago';
+        }
+
+        function bindThresholdSlider(rangeId, labelId, unit, name) {
+            const range = document.getElementById(rangeId);
+            const label = document.getElementById(labelId);
+            if (!range || !label) return;
+            
+            const storageKey = 'smartenviro_threshold_' + name.toLowerCase();
+            const saved = localStorage.getItem(storageKey);
+            if (saved) range.value = saved;
+
+            const updateLabel = () => {
+                label.innerText = range.value + unit;
+            };
+            range.addEventListener('input', updateLabel);
+            range.addEventListener('change', () => {
+                localStorage.setItem(storageKey, range.value);
+            });
+            updateLabel();
+        }
+
+        bindThresholdSlider('co2-range', 'co2-value', ' ppm', 'CO2');
+        bindThresholdSlider('hum-range', 'hum-value', ' %', 'Humidity');
+        bindThresholdSlider('temp-range', 'temp-value', ' °C', 'Temperature');
+
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'smartenviro_alert_history') {
+                loadAlertHistory();
+            }
+        });
+
+        window.addEventListener('load', loadAlertHistory);
+    </script>
+</body>
+
+</html>

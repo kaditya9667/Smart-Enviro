@@ -1,0 +1,551 @@
+@page
+@model SmartEnviro.Pages.MapModel
+@{
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        /* Map container needs to fill the remaining area */
+        #map-container {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+        }
+        .custom-div-icon {
+            background: none;
+            border: none;
+        }
+        /* Leaflet Popup Dark Theme Styling - Sleek & Compact */
+        .leaflet-popup-content-wrapper {
+            background-color: #14192a !important;
+            color: #ffffff !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+            border: 1px solid #2e3552 !important;
+            padding: 0 !important;
+        }
+        .leaflet-popup-content {
+            margin: 12px 14px !important;
+            line-height: 1.4 !important;
+            color: #ffffff !important;
+        }
+        .leaflet-popup-content * {
+            color: inherit;
+        }
+        .leaflet-popup-tip-container {
+            margin-top: -1px !important;
+        }
+        .leaflet-popup-tip {
+            background-color: #14192a !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4) !important;
+        }
+        .leaflet-container a.leaflet-popup-close-button {
+            color: #94a3b8 !important;
+            padding: 6px 8px 0 0 !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            background: transparent !important;
+            border: none !important;
+        }
+        .leaflet-container a.leaflet-popup-close-button:hover {
+            color: #f43f5e !important;
+            background: transparent !important;
+        }
+    </style>
+}
+
+<main class="flex-1 relative flex flex-col md:flex-row overflow-hidden w-full h-[calc(100vh-4rem)]">
+    <!-- Sidebar Searchable List -->
+    <aside class="w-full md:w-96 flex flex-col z-10 p-4 md:p-6 gap-4 md:gap-6 bg-surface/90 md:bg-transparent backdrop-blur-sm border-b md:border-b-0 border-slate-200 dark:border-surface-container-highest shrink-0 h-1/3 md:h-full overflow-hidden shadow-md md:shadow-none">
+        <div class="flex flex-col gap-4">
+            <h1 class="text-2xl font-semibold text-on-surface font-headline">Sensors</h1>
+            <!-- Search Input -->
+            <div class="neomorphic-inset bg-surface rounded-xl flex items-center px-4 py-3 gap-3">
+                <span class="material-symbols-outlined text-outline">search</span>
+                <input id="hw-sensor-search" class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-outline-variant text-on-surface" placeholder="Search serial or location..." type="text"/>
+            </div>
+        </div>
+        <!-- Scrollable List Container -->
+        <div id="sidebar-sensors-list" class="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4 opacity-70 overflow-y-auto">
+            <div class="w-16 h-16 rounded-full bg-surface-container neomorphic-inset flex items-center justify-center mb-2">
+                <span class="material-symbols-outlined text-outline text-3xl">sensors_off</span>
+            </div>
+            <h3 class="text-lg font-semibold text-on-surface">No Sensors Connected</h3>
+            <p class="text-sm text-on-surface-variant max-w-[200px]">Deploy your hardware model on the network.</p>
+        </div>
+    </aside>
+    
+    <!-- Map Main Canvas -->
+    <div class="flex-1 relative bg-surface-container overflow-hidden">
+        <div id="map-container" class="absolute inset-0 z-0"></div>
+        
+        <!-- Neomorphic Overlay Elements -->
+        <!-- Map Controls -->
+        <div class="absolute top-4 right-4 md:top-6 md:right-6 flex flex-col gap-3 z-20">
+            <button id="zoom-in" class="w-12 h-12 neomorphic-raised bg-surface rounded-xl flex items-center justify-center text-primary active:shadow-inset">
+                <span class="material-symbols-outlined">add</span>
+            </button>
+            <button id="zoom-out" class="w-12 h-12 neomorphic-raised bg-surface rounded-xl flex items-center justify-center text-primary active:shadow-inset">
+                <span class="material-symbols-outlined">remove</span>
+            </button>
+            <button id="locate-me" class="w-12 h-12 neomorphic-raised bg-surface rounded-xl flex items-center justify-center text-secondary active:shadow-inset">
+                <span class="material-symbols-outlined">my_location</span>
+            </button>
+            <button id="toggle-map-layer" class="w-12 h-12 neomorphic-raised bg-surface rounded-xl flex items-center justify-center text-secondary active:shadow-inset">
+                <span class="material-symbols-outlined">layers</span>
+            </button>
+        </div>
+        
+        <!-- Status Legend Overlay -->
+        <div class="absolute bottom-4 left-4 md:bottom-10 md:left-10 neomorphic-raised bg-surface/90 backdrop-blur-sm p-3 md:p-4 rounded-xl flex items-center gap-3 md:gap-6 z-20">
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                <span class="text-xs font-medium text-on-surface-variant">Normal</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                <span class="text-xs font-medium text-on-surface-variant">Warning</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+                <span class="text-xs font-medium text-on-surface-variant">Critical</span>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        // Initialize Leaflet Map
+        let initialCenter = [51.505, -0.09];
+        let initialZoom = 13;
+        try {
+            const savedCenter = localStorage.getItem('smartenviro_map_center');
+            if (savedCenter) {
+                const c = JSON.parse(savedCenter);
+                initialCenter = [c.lat, c.lng];
+            }
+            const savedZoom = localStorage.getItem('smartenviro_map_zoom');
+            if (savedZoom) initialZoom = parseInt(savedZoom);
+        } catch(e) {}
+        
+        var map = L.map('map-container', {zoomControl: false}).setView(initialCenter, initialZoom);
+        
+        // Define base tile layers
+        const lightTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 20
+        });
+        
+        const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 20
+        });
+
+        // Set default layer to dark tiles (forced dark theme)
+        darkTiles.addTo(map);
+
+        let userLocationMarker = null;
+        const locateBtn = document.getElementById('locate-me');
+        const locateIcon = locateBtn.querySelector('span');
+        
+        // Custom UI zoom controls
+        document.getElementById('zoom-in').addEventListener('click', function(){
+            map.zoomIn();
+        });
+        document.getElementById('zoom-out').addEventListener('click', function(){
+            map.zoomOut();
+        });
+
+        // Toggle layer control manually
+        let isSatellite = false;
+        const satTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+        
+        document.getElementById('toggle-map-layer').addEventListener('click', function() {
+            if (!isSatellite) {
+                map.removeLayer(lightTiles);
+                map.removeLayer(darkTiles);
+                satTiles.addTo(map);
+                isSatellite = true;
+            } else {
+                map.removeLayer(satTiles);
+                const darkTheme = document.documentElement.classList.contains('dark');
+                if (darkTheme) {
+                    darkTiles.addTo(map);
+                } else {
+                    lightTiles.addTo(map);
+                }
+                isSatellite = false;
+            }
+        });
+
+        // Map markers
+        let activeHardwareModels = [];
+        let mapMarkers = [];
+        
+        function loadSmartenviroCities() {
+            let cities = [];
+            try {
+                const saved = localStorage.getItem('smartenviro_cities');
+                if (saved) cities = JSON.parse(saved);
+            } catch(e) {}
+            return cities;
+        }
+        
+        async function initializeMapSensors() {
+            const cities = loadSmartenviroCities();
+            activeHardwareModels = [];
+            
+            // Remove existing markers first
+            mapMarkers.forEach(m => map.removeLayer(m.marker));
+            mapMarkers = [];
+            
+            for (const c of cities) {
+                try {
+                    // Call backend proxy instead of WAQI directly
+                    const res = await fetch(`/api/sensors/feed?city=${encodeURIComponent(c.city)}&token=${c.token}`);
+                    const json = await res.json();
+                    if (json.status === 'ok' && json.data.city && json.data.city.geo) {
+                        activeHardwareModels.push({
+                            id: c.city,
+                            name: json.data.city.name || c.displayName || c.city,
+                            lat: json.data.city.geo[0],
+                            lng: json.data.city.geo[1],
+                            aqi: json.data.aqi,
+                            status: 'ok',
+                            url: c.city
+                        });
+                    }
+                } catch (e) {
+                    console.error('Failed to load map sensor', c, e);
+                }
+            }
+            
+            activeHardwareModels.forEach(model => plotSensorOnMap(model));
+            updateSidebarList();
+            highlightClosestSensor();
+        }
+        
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const p = 0.017453292519943295;
+            const c = Math.cos;
+            const a = 0.5 - c((lat2 - lat1) * p)/2 + 
+                    c(lat1 * p) * c(lat2 * p) * 
+                    (1 - c((lon2 - lon1) * p))/2;
+            return 12742 * Math.asin(Math.sqrt(a));
+        }
+        
+        function highlightClosestSensor() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    if (userLocationMarker) {
+                        userLocationMarker.setLatLng([userLat, userLng]);
+                    } else {
+                        const userIcon = L.divIcon({
+                            className: 'custom-div-icon',
+                            html: `<div style="background-color:#3b82f6; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`,
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        });
+                        userLocationMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(map)
+                            .bindPopup(`<b>Your Location</b>`);
+                    }
+                    
+                    if (activeHardwareModels.length > 0) {
+                        let closest = null;
+                        let minDist = Infinity;
+                        activeHardwareModels.forEach(m => {
+                            let d = calculateDistance(userLat, userLng, m.lat, m.lng);
+                            if (d < minDist) {
+                                minDist = d;
+                                closest = m;
+                            }
+                        });
+                        if (closest) {
+                            userLocationMarker.openPopup();
+                            const bounds = L.latLngBounds([[userLat, userLng], [closest.lat, closest.lng]]);
+                            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+                            setTimeout(() => {
+                                const mObj = mapMarkers.find(x => x.id === closest.url);
+                                if(mObj) mObj.marker.openPopup();
+                            }, 2000);
+                        }
+                    } else {
+                        userLocationMarker.openPopup();
+                        map.flyTo([userLat, userLng], 13);
+                    }
+                }, err => {
+                    console.error("Location error:", err);
+                });
+            }
+        }
+        
+        function plotSensorOnMap(modelObj) {
+            let aqi = parseInt(modelObj.aqi);
+            if (isNaN(aqi)) return; // Skip invalid or missing AQI data
+            
+            let color = '#10b981'; // emerald for good/moderate
+            if (aqi > 150) color = '#f97386'; // error/rose (danger)
+            else if (aqi > 100) color = '#f59e0b'; // amber (warning)
+            else if (aqi > 50) color = '#8342f4'; // violet (moderate)
+        
+            let textColor = '#0b0e19'; // dark contrast text for bright pins (green/amber)
+            if (aqi > 50 && aqi <= 100) textColor = '#ffffff'; // white text for purple pin
+            else if (aqi > 150) textColor = '#ffffff'; // white text for red pin
+
+            const defaultIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="background-color:${color}; width:28px; height:28px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 4px 10px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; color:${textColor}; font-weight:800; font-size:11px; font-family:'Plus Jakarta Sans', sans-serif; text-align:center;">${aqi}</div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            });
+            
+            let popupHtml = `<div style="color: #ffffff !important; font-weight: 700; font-size: 15px; margin-bottom: 8px; font-family: 'Plus Jakarta Sans', sans-serif; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${modelObj.name}</div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; background: #3730a3; color: #e0e7ff !important; font-weight: 700; font-family: monospace; border: 1px solid #4338ca;">AQI: ${modelObj.aqi}</span>
+                    <span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; background: #065f46; color: #d1fae5 !important; font-weight: 600; border: 1px solid #047857;">Active</span>
+                </div>`;
+
+            if (modelObj.isDiscovered) {
+                popupHtml += `<div class="mt-2 text-center"><button onclick="addDiscoveredSensor('${modelObj.id}')" class="text-[10px] bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-500 transition-colors shadow cursor-pointer font-semibold w-full">Add to Dashboard</button></div>`;
+            }
+        
+            const marker = L.marker([modelObj.lat, modelObj.lng], { icon: defaultIcon }).addTo(map)
+                .bindPopup(popupHtml);
+            mapMarkers.push({ marker, id: modelObj.url, modelObj: modelObj });
+        }
+        
+        window.addDiscoveredSensor = function(id) {
+            const mObj = mapMarkers.find(x => x.id === id);
+            if (!mObj || !mObj.modelObj) return;
+            
+            const modelObj = mObj.modelObj;
+            modelObj.isDiscovered = false; // no longer discovered, now added
+            
+            if (!activeHardwareModels.find(m => m.url === modelObj.url)) {
+                activeHardwareModels.push(modelObj);
+            }
+            
+            let cities = [];
+            try {
+                const saved = localStorage.getItem('smartenviro_cities');
+                if (saved) cities = JSON.parse(saved);
+            } catch(e) {}
+            
+            if (!cities.find(c => c.city === '@@' + modelObj.id)) {
+                cities.push({
+                    city: '@@' + modelObj.id, // Dashboard expects station ID
+                    token: '2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a',
+                    displayName: modelObj.name
+                });
+                localStorage.setItem('smartenviro_cities', JSON.stringify(cities));
+            }
+            
+            mObj.marker.setPopupContent(`<b>${modelObj.name}</b><br><span style="font-size:10px;color:gray;">AQI: ${modelObj.aqi}</span><br><span style="color:#10b981;font-weight:bold;font-size:10px;">Added to Dashboard</span>`);
+            updateSidebarList();
+        };
+        
+        function updateSidebarList() {
+            const container = document.getElementById('sidebar-sensors-list');
+            if (activeHardwareModels.length === 0) {
+                container.innerHTML = `<div class="w-16 h-16 rounded-full bg-surface-container neomorphic-inset flex items-center justify-center mb-2">
+                    <span class="material-symbols-outlined text-outline text-3xl">sensors_off</span>
+                </div>
+                <h3 class="text-lg font-semibold text-on-surface">No Connected Locations</h3>
+                <p class="text-sm text-on-surface-variant max-w-[200px]">Add locations from the main dashboard first.</p>`;
+                container.classList.add('items-center', 'justify-center', 'opacity-70');
+                container.classList.remove('items-start', 'justify-start', 'opacity-100');
+            } else {
+                container.classList.remove('items-center', 'justify-center', 'opacity-70');
+                container.classList.add('items-start', 'justify-start', 'opacity-100');
+                
+                let html = '<div class="w-full flex flex-col gap-3">';
+                activeHardwareModels.forEach(model => {
+                    html += `<div class="w-full neomorphic-raised bg-surface dark:bg-background p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-surface-container-low transition-colors" onclick="map.flyTo([${model.lat}, ${model.lng}], 15); const mObj=mapMarkers.find(x=>x.id==='${model.url}'); if(mObj) mObj.marker.openPopup();">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full neomorphic-inset bg-surface flex items-center justify-center text-primary"><span class="material-symbols-outlined">location_on</span></div>
+                            <div class="flex flex-col text-left">
+                                <span class="font-bold text-sm text-on-surface capitalize truncate max-w-[140px]">${model.name}</span>
+                                <span class="text-xs text-on-surface-variant font-mono">AQI: ${model.aqi}</span>
+                            </div>
+                        </div>
+                        <div class="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+        }
+        
+        document.getElementById('hw-sensor-search').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const items = document.getElementById('sidebar-sensors-list').querySelectorAll('.w-full.neomorphic-raised');
+            items.forEach(item => {
+                if(item.innerText.toLowerCase().includes(term)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Locate me click handler
+        locateBtn.addEventListener('click', function(){
+            locateIcon.classList.add('animate-pulse');
+            highlightClosestSensor(); 
+            setTimeout(() => locateIcon.classList.remove('animate-pulse'), 1000);
+        });
+        
+        let isFetchingBounds = false;
+        let discoveredMarkers = new Set(); // track dynamically added public sensors
+        
+        async function fetchSensorsInBounds() {
+            if (isFetchingBounds) return;
+            
+            // Prevent overwhelming query when zoomed out
+            if (map.getZoom() < 8) return;
+            
+            isFetchingBounds = true;
+            const bounds = map.getBounds();
+            const latlngStr = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+            const token = '2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a'; 
+            
+            try {
+                // Call C# proxy endpoint instead of directly WAQI bounds API
+                const res = await fetch(`/api/sensors/bounds?latlng=${latlngStr}&token=${token}`);
+                const json = await res.json();
+                
+                if (json.status === 'ok' && json.data) {
+                    json.data.forEach(item => {
+                        const id = item.uid.toString();
+                        if (!discoveredMarkers.has(id) && !activeHardwareModels.find(m => m.url === id || m.url === '@@' + id)) {
+                            discoveredMarkers.add(id);
+                            const modelObj = {
+                                id: id,
+                                name: item.station ? item.station.name : 'Public Sensor',
+                                lat: item.lat,
+                                lng: item.lon,
+                                aqi: item.aqi,
+                                status: 'ok',
+                                url: id,
+                                isDiscovered: true
+                            };
+                            
+                            if (!isNaN(parseInt(modelObj.aqi))) {
+                                plotSensorOnMap(modelObj);
+                            }
+                        }
+                    });
+                }
+            } catch(e) {
+                console.error('Failed to fetch bounds sensors', e);
+            }
+            isFetchingBounds = false;
+        }
+        
+        // Map movement event handler to fetch sensors and persist center/zoom
+        map.on('moveend', () => {
+            try {
+                localStorage.setItem('smartenviro_map_center', JSON.stringify(map.getCenter()));
+                localStorage.setItem('smartenviro_map_zoom', map.getZoom());
+            } catch(e) {}
+            fetchSensorsInBounds();
+        });
+        
+
+
+        // SignalR Connection Setup
+        let hubConnection = null;
+
+        function startSignalR() {
+            hubConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/sensorHub")
+                .withAutomaticReconnect()
+                .build();
+
+            hubConnection.on("ReceiveSensorUpdate", (data) => {
+                // Find matching active hardware model
+                const model = activeHardwareModels.find(m => 
+                    m.id.toLowerCase() === data.city.toLowerCase() ||
+                    m.url.toLowerCase() === data.city.toLowerCase()
+                );
+
+                if (model) {
+                    model.aqi = data.lastAqi !== null ? data.lastAqi : model.aqi;
+                    
+                    // Update Marker on Map
+                    const mObj = mapMarkers.find(x => x.id === model.url);
+                    if (mObj) {
+                        let aqi = parseInt(model.aqi);
+                        let color = '#10b981'; // emerald for good/moderate
+                        if (aqi > 150) color = '#f97386'; // danger
+                        else if (aqi > 100) color = '#f59e0b'; // warning
+                        else if (aqi > 50) color = '#8342f4'; // moderate
+
+                        let textColor = '#0b0e19'; // dark text for bright pins (green/amber)
+                        if (aqi > 50 && aqi <= 100) textColor = '#ffffff'; // white text for purple pin
+                        else if (aqi > 150) textColor = '#ffffff'; // white text for red pin
+
+                        const newIcon = L.divIcon({
+                            className: 'custom-div-icon',
+                            html: `<div style="background-color:${color}; width:28px; height:28px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 4px 10px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; color:${textColor}; font-weight:800; font-size:11px; font-family:'Plus Jakarta Sans', sans-serif; text-align:center;">${aqi}</div>`,
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14]
+                        });
+                        mObj.marker.setIcon(newIcon);
+
+                        let popupHtml = `<div style="color: #ffffff !important; font-weight: 700; font-size: 15px; margin-bottom: 8px; font-family: 'Plus Jakarta Sans', sans-serif; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${model.name}</div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; background: #3730a3; color: #e0e7ff !important; font-weight: 700; font-family: monospace; border: 1px solid #4338ca;">AQI: ${model.aqi}</span>
+                                <span style="padding: 3px 10px; border-radius: 6px; font-size: 12px; background: #065f46; color: #d1fae5 !important; font-weight: 600; border: 1px solid #047857;">Active</span>
+                            </div>`;
+                        mObj.marker.setPopupContent(popupHtml);
+                    }
+
+                    // Update Sidebar List UI
+                    updateSidebarList();
+                }
+            });
+
+            hubConnection.start()
+                .then(() => {
+                    console.log("Map SignalR Connected.");
+                    registerCitiesWithHub();
+                })
+                .catch(err => console.error("Map SignalR Connection Error: ", err));
+        }
+
+        function registerCitiesWithHub() {
+            if (hubConnection && hubConnection.state === signalR.HubConnectionState.Connected) {
+                const cities = loadSmartenviroCities();
+                const list = cities.map(c => ({
+                    city: c.city,
+                    token: c.token || '2e9f0dd7c70b8c04a7b1aa875d3f74454b2f9f6a',
+                    displayName: c.displayName,
+                    endpoint: c.endpoint,
+                    type: c.type || 'waqi'
+                }));
+                hubConnection.invoke("RegisterCities", list).catch(err => console.error(err));
+            }
+        }
+
+        // Listen to Firebase cloud data sync event
+        window.addEventListener('smartenvirosync', () => {
+            console.log("[Map] Cloud sync received, re-initializing map markers.");
+            initializeMapSensors();
+            registerCitiesWithHub();
+        });
+
+        // Initialize Map
+        initializeMapSensors();
+        startSignalR();
+    </script>
+}
